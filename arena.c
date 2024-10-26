@@ -13,7 +13,7 @@ struct Arena {
     uint32_t size;
 };
 
-struct Arena *fuckItWeBallArena(uint32_t size) {
+struct Arena *createArena(uint32_t size) {
     // We have to allocate this on the heap that way the life time lasts longer
     // then this function call. We could have the user pass in an arena type
     // that way the caller is in charge of lifetime.
@@ -39,9 +39,9 @@ struct Arena *fuckItWeBallArena(uint32_t size) {
 
 // private function used to create additional nodes
 struct Arena *createArenaNode(struct Arena *prev) {
-    // This is the same as the other fuck it we ball yet it is building a node
+    // This is the same as createArena yet it is building a node
     // on a linked list
-    struct Arena *arena = fuckItWeBallArena(prev->size);
+    struct Arena *arena = createArena(prev->size);
     if (arena == NULL) {
         DEBUG_PRINT(
             "Fatal: createArenaNode was unable to allocate another node to "
@@ -233,7 +233,7 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
 int testCreateArena() {
     int status = 0;
     // test the creation of the arena
-    struct Arena *arena = fuckItWeBallArena(50 * sizeof(int));
+    struct Arena *arena = createArena(50 * sizeof(int));
     status = ASSERT_TRUE(arena->size == (50 * sizeof(int)), status);
     status = ASSERT_TRUE(arena->currentOffset == 0, status);
     status = ASSERT_TRUE(arena->nextNode == NULL, status);
@@ -248,7 +248,7 @@ int testCreateArena() {
 
 int testAllocMemory() {
     int status = 0;
-    struct Arena *arena = fuckItWeBallArena(50 * sizeof(float));
+    struct Arena *arena = createArena(50 * sizeof(float));
     // sanity check
     status = ASSERT_TRUE(arena->size == (50 * sizeof(float)), status);
 
@@ -297,7 +297,7 @@ int testAllocMemory() {
 
 int testZAllocMemory() {
     int status = 0;
-    struct Arena *arena = fuckItWeBallArena(50 * sizeof(float));
+    struct Arena *arena = createArena(50 * sizeof(float));
     // sanity check
     status = ASSERT_TRUE(arena->size == (50 * sizeof(float)), status);
 
@@ -318,7 +318,7 @@ int testZAllocMemory() {
 
 int testFreeArena() {
     int status = 0;
-    struct Arena *arena = fuckItWeBallArena(50 * sizeof(float));
+    struct Arena *arena = createArena(50 * sizeof(float));
     // sanity check
     status = ASSERT_TRUE(arena->size == (50 * sizeof(float)), status);
 
@@ -365,7 +365,7 @@ int testFreeArena() {
 
 int testScratchPad() {
     int status = 0;
-    struct Arena *arena = fuckItWeBallArena(50 * sizeof(float));
+    struct Arena *arena = createArena(50 * sizeof(float));
     // sanity check
     status = ASSERT_TRUE(arena->size == (50 * sizeof(float)), status);
 
