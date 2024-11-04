@@ -1,14 +1,16 @@
 #include <stdint.h>
 // defining DEBUG will enable debug logging statements
-#define DEBUG
+//#define ARENA_DEBUG
 
 // in the future this should be going to stderr instead of stdout
-#ifdef DEBUG
+#ifdef ARENA_DEBUG
+#include <stdio.h>
 #define DEBUG_PRINT(message) (printf(message))
 #else
 #define DEBUG_PRINT(message)
 #endif
 
+#define DEFAULT_SIZE 1024
 /*
  * notes on other features
  * look into what marcos make sense to create in the .h for easier use of the

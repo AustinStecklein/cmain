@@ -1,8 +1,6 @@
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "arena.h"
 
 struct Arena {
@@ -227,7 +225,7 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
 // UNIT TESTS
 //
 //
-#ifdef DEBUG
+#ifdef ARENA_DEBUG
 #define ASSERT_TRUE(expression, status) ((expression) ? status : 1)
 
 int testCreateArena() {
