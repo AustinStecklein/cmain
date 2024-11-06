@@ -413,6 +413,6 @@ int main() {
     status = testScratchPad();
     totalPassed += status == 0 ? 1 : 0;
     printf("testScratchPad: returned with %d\n", status);
-    printf("number of tests passed %d\n", totalPassed);
+    printf("number of tests passed %d out of %d\n", totalPassed, 5);
 }
 #endif
