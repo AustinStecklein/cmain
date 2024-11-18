@@ -1,6 +1,4 @@
 #include <stdint.h>
-// defining DEBUG will enable debug logging statements
-//#define ARENA_DEBUG
 
 // in the future this should be going to stderr instead of stdout
 #ifdef ARENA_DEBUG
