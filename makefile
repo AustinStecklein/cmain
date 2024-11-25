@@ -4,9 +4,9 @@ LD_FLAGS = -lm
 DEBUG = -ggdb3
 
 clean:
-	rm *.gch
 	rm *.o
 	rm ./build/*
+	rm *.gch
 
 debug_arena.o: arena.h arena.c
 	$(CC) $(CC_FLAGS) -DARENA_DEBUG -c arena.c

@@ -1,8 +1,8 @@
 #include "arena.h"
-#include "unittest.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
 
 struct Arena {
     struct Arena *prevNode;
@@ -228,7 +228,7 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
 //
 //
 #ifdef ARENA_DEBUG
-
+#include "unittest.h"
 void testCreateArena() {
     // test the creation of the arena
     struct Arena *arena = createArena(50 * sizeof(int));
