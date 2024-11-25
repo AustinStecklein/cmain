@@ -62,6 +62,12 @@
         (array).arena = givenArena;                                            \
     } while (0)
 
+// Set size to zero which will do a lazy clear
+#define CLEAR_ARRAY(array)                                                      \
+    do {                                                                       \
+        (array).size = 0;                                                      \
+    } while (0)
+
 // free the array. Since this uses an arena the array is not in charge of the
 // memory so just set everything back to the default.
 #define FREE_ARRAY(array)                                                      \
