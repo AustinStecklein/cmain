@@ -1,7 +1,8 @@
+#include "arena.h"
+#include "unittest.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include "arena.h"
 
 struct Arena {
     struct Arena *prevNode;
@@ -21,7 +22,8 @@ struct Arena *createArena(uint32_t size) {
         return NULL;
     }
     // build the arena!
-	// again a single malloc is used for the node and size so the start is just after the header
+    // again a single malloc is used for the node and size so the start is just
+    // after the header
     arena->start = malloc(size);
     arena->currentOffset = 0;
     arena->size = 0;
@@ -69,13 +71,13 @@ void burnItDown(struct Arena **arena) {
         burnItDown(&((*arena)->prevNode));
     }
     // free all of the pointers now
-	if ((*arena)->start != NULL) {
-		free((*arena)->start);
-		(*arena)->start = NULL;
-	}
-	else {
-		DEBUG_PRINT("Warning the start pointer passed to `burnItDown` was already freed");
-	}
+    if ((*arena)->start != NULL) {
+        free((*arena)->start);
+        (*arena)->start = NULL;
+    } else {
+        DEBUG_PRINT("Warning the start pointer passed to `burnItDown` was "
+                    "already freed");
+    }
     free(*arena);
     *arena = NULL;
 }
@@ -226,38 +228,35 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
 //
 //
 #ifdef ARENA_DEBUG
-#define ASSERT_TRUE(expression, status) ((expression) ? status : 1)
 
-int testCreateArena() {
-    int status = 0;
+void testCreateArena() {
     // test the creation of the arena
     struct Arena *arena = createArena(50 * sizeof(int));
-    status = ASSERT_TRUE(arena->size == (50 * sizeof(int)), status);
-    status = ASSERT_TRUE(arena->currentOffset == 0, status);
-    status = ASSERT_TRUE(arena->nextNode == NULL, status);
-    status = ASSERT_TRUE(arena->prevNode == NULL, status);
-    status = ASSERT_TRUE(arena->start != NULL, status);
+    ASSERT_TRUE(arena->size == (50 * sizeof(int)), "check arena size");
+    ASSERT_TRUE(arena->currentOffset == 0, "check current offset");
+    ASSERT_TRUE(arena->nextNode == NULL, "check next status");
+    ASSERT_TRUE(arena->prevNode == NULL, "check prev status");
+    ASSERT_TRUE(arena->start != NULL, "check arena start pointer");
 
     // check clean up
     burnItDown(&arena);
-    status = ASSERT_TRUE(arena == NULL, status);
-    return status;
+    ASSERT_TRUE(arena == NULL, "check cleanup");
 }
 
-int testAllocMemory() {
-    int status = 0;
+void testAllocMemory() {
     struct Arena *arena = createArena(50 * sizeof(float));
     // sanity check
-    status = ASSERT_TRUE(arena->size == (50 * sizeof(float)), status);
+    ASSERT_TRUE(arena->size == (50 * sizeof(float)), "check arena size");
 
     // test with a single node
     float *a = mallocArena(&arena, 20 * sizeof(float));
-    status = ASSERT_TRUE(arena->size == (50 * sizeof(float)), status);
-    status = ASSERT_TRUE(arena->currentOffset == (20 * sizeof(float)), status);
-    status = ASSERT_TRUE(arena->nextNode == NULL, status);
-    status = ASSERT_TRUE(arena->prevNode == NULL, status);
-    status = ASSERT_TRUE(arena->start != NULL, status);
-    status = ASSERT_TRUE(a != NULL, status);
+    ASSERT_TRUE(arena->size == (50 * sizeof(float)), "check arena size");
+    ASSERT_TRUE(arena->currentOffset == (20 * sizeof(float)),
+                "check current offset");
+    ASSERT_TRUE(arena->nextNode == NULL, "check next status");
+    ASSERT_TRUE(arena->prevNode == NULL, "check prev status");
+    ASSERT_TRUE(arena->start != NULL, "check arena start");
+    ASSERT_TRUE(a != NULL, "check malloc'ed pointer status");
 
     // attempt to alloc memory at the last index to check that the memory is
     // valid if this fails then the code will code dump
@@ -265,154 +264,155 @@ int testAllocMemory() {
 
     // alloc four more times to show that the arena builds a linked list
     float *b = mallocArena(&arena, 10 * sizeof(float));
-    status = ASSERT_TRUE(b != NULL, status);
-    status = ASSERT_TRUE(arena->currentOffset == (30 * sizeof(float)), status);
-    status = ASSERT_TRUE(arena->nextNode == NULL, status);
-    status = ASSERT_TRUE(arena->prevNode == NULL, status);
+    ASSERT_TRUE(b != NULL, "check malloc'ed pointer status");
+    ASSERT_TRUE(arena->currentOffset == (30 * sizeof(float)),
+                "check current offset");
+    ASSERT_TRUE(arena->nextNode == NULL, "check next status");
+    ASSERT_TRUE(arena->prevNode == NULL, "check prev status");
 
     float *c = mallocArena(&arena, 40 * sizeof(float));
-    status = ASSERT_TRUE(c != NULL, status);
-    status = ASSERT_TRUE(arena->size == (50 * sizeof(float)), status);
+    ASSERT_TRUE(c != NULL, "check malloc'ed pointer status");
+    ASSERT_TRUE(arena->size == (50 * sizeof(float)), "check arena size");
     // the last node should not have any space at this point so this should be
     // the first private node
-    status = ASSERT_TRUE(arena->currentOffset == (40 * sizeof(float)), status);
-    status = ASSERT_TRUE(arena->nextNode == NULL, status);
-    status = ASSERT_TRUE(arena->prevNode != NULL, status);
+    ASSERT_TRUE(arena->currentOffset == (40 * sizeof(float)),
+                "check current offset");
+    ASSERT_TRUE(arena->nextNode == NULL, "check next status");
+    ASSERT_TRUE(arena->prevNode != NULL, "check prev status");
 
     // one more time!
     float *d = mallocArena(&arena, 50 * sizeof(float));
-    status = ASSERT_TRUE(d != NULL, status);
-    status = ASSERT_TRUE(arena->size == (50 * sizeof(float)), status);
+    ASSERT_TRUE(d != NULL, "check malloc'ed pointer status");
+    ASSERT_TRUE(arena->size == (50 * sizeof(float)), "check arena size");
     // the last node should not have any space at this point so this should be
     // the first private node
-    status = ASSERT_TRUE(arena->currentOffset == (50 * sizeof(float)), status);
-    status = ASSERT_TRUE(arena->nextNode == NULL, status);
-    status = ASSERT_TRUE(arena->prevNode != NULL, status);
+    ASSERT_TRUE(arena->currentOffset == (50 * sizeof(float)),
+                "check the current offset");
+    ASSERT_TRUE(arena->nextNode == NULL, "check next status");
+    ASSERT_TRUE(arena->prevNode != NULL, "check prev status");
 
     burnItDown(&arena);
-    return status;
 }
 
-int testZAllocMemory() {
-    int status = 0;
+void testZAllocMemory() {
     struct Arena *arena = createArena(50 * sizeof(float));
     // sanity check
-    status = ASSERT_TRUE(arena->size == (50 * sizeof(float)), status);
+    ASSERT_TRUE(arena->size == (50 * sizeof(float)), "check size");
 
     // test with a single node
     float *a = zmallocArena(&arena, 20 * sizeof(float));
-    status = ASSERT_TRUE(arena->size == (50 * sizeof(float)), status);
-    status = ASSERT_TRUE(arena->currentOffset == (20 * sizeof(float)), status);
-    status = ASSERT_TRUE(arena->nextNode == NULL, status);
-    status = ASSERT_TRUE(arena->prevNode == NULL, status);
-    status = ASSERT_TRUE(arena->start != NULL, status);
-    status = ASSERT_TRUE(a != NULL, status);
-    status = ASSERT_TRUE(a[0] == 0.0f, status);
-    status = ASSERT_TRUE(a[19] == 0.0f, status);
+    ASSERT_TRUE(arena->size == (50 * sizeof(float)), "check malloc size");
+    ASSERT_TRUE(arena->currentOffset == (20 * sizeof(float)),
+                "check current offset");
+    ASSERT_TRUE(arena->nextNode == NULL, "check next status");
+    ASSERT_TRUE(arena->prevNode == NULL, "check prev status");
+    ASSERT_TRUE(arena->start != NULL, "check arena start");
+    ASSERT_TRUE(a != NULL, "check malloc pointer status");
+    ASSERT_TRUE(a[0] == 0.0f, "check first value");
+    ASSERT_TRUE(a[19] == 0.0f, "check 20th value");
 
     burnItDown(&arena);
-    return status;
 }
 
-int testFreeArena() {
-    int status = 0;
+void testFreeArena() {
     struct Arena *arena = createArena(50 * sizeof(float));
     // sanity check
-    status = ASSERT_TRUE(arena->size == (50 * sizeof(float)), status);
+    ASSERT_TRUE(arena->size == (50 * sizeof(float)), "check initial size");
 
     // test with a single node
     float *a = mallocArena(&arena, 20 * sizeof(float));
-    status = ASSERT_TRUE(a != NULL, status);
-    status = ASSERT_TRUE(arena->size == (50 * sizeof(float)), status);
-    status = ASSERT_TRUE(arena->currentOffset == (20 * sizeof(float)), status);
+    ASSERT_TRUE(a != NULL, "check that a is not null to start");
+    ASSERT_TRUE(arena->size == (50 * sizeof(float)),
+                "check that the size is correct");
+    ASSERT_TRUE(arena->currentOffset == (20 * sizeof(float)),
+                "check the offset now");
 
     float *b = mallocArena(&arena, 40 * sizeof(float));
-    status = ASSERT_TRUE(b != NULL, status);
-    status = ASSERT_TRUE(arena->size == (50 * sizeof(float)), status);
+    ASSERT_TRUE(b != NULL, "check malloc'ed pointer status");
+    ASSERT_TRUE(arena->size == (50 * sizeof(float)),
+                "check that the size increased");
     // the last node should not have any space at this point so this should be
     // the first private node
-    status = ASSERT_TRUE(arena->currentOffset == (40 * sizeof(float)), status);
-    status = ASSERT_TRUE(arena->nextNode == NULL, status);
-    status = ASSERT_TRUE(arena->prevNode != NULL, status);
+    ASSERT_TRUE(arena->currentOffset == (40 * sizeof(float)), "chelc offset");
+    ASSERT_TRUE(arena->nextNode == NULL, "check next status");
+    ASSERT_TRUE(arena->prevNode != NULL, "check prev status");
 
     // First test that the sized free works in the same node and across nodes
     freeArena(&arena, 15 * sizeof(float));
-    status = ASSERT_TRUE(arena->currentOffset == (25 * sizeof(float)), status);
-    status = ASSERT_TRUE(arena->nextNode == NULL, status);
-    status = ASSERT_TRUE(arena->prevNode != NULL, status);
+    ASSERT_TRUE(arena->currentOffset == (25 * sizeof(float)),
+                "check the offset");
+    ASSERT_TRUE(arena->nextNode == NULL, "check next status");
+    ASSERT_TRUE(arena->prevNode != NULL, "check prev status");
 
     freeArena(&arena, 35 * sizeof(float));
-    status = ASSERT_TRUE(arena->currentOffset == (10 * sizeof(float)), status);
-    status = ASSERT_TRUE(arena->nextNode != NULL, status);
-    status = ASSERT_TRUE(arena->prevNode == NULL, status);
+    ASSERT_TRUE(arena->currentOffset == (10 * sizeof(float)),
+                "check the offset");
+    ASSERT_TRUE(arena->nextNode != NULL, "check next status");
+    ASSERT_TRUE(arena->prevNode == NULL, "check prev status");
 
     // add back in the other node
     float *c = mallocArena(&arena, 40 * sizeof(float));
     float *d = mallocArena(&arena, 40 * sizeof(float));
-    status = ASSERT_TRUE(c != NULL, status);
-    status = ASSERT_TRUE(d != NULL, status);
+    ASSERT_TRUE(c != NULL, "check malloc status");
+    ASSERT_TRUE(d != NULL, "check malloc status");
     // free the whole arena
     freeWholeArena(&arena);
-    status = ASSERT_TRUE(arena->currentOffset == 0, status);
-    status = ASSERT_TRUE(arena->nextNode != NULL, status);
-    status = ASSERT_TRUE(arena->prevNode == NULL, status);
+    ASSERT_TRUE(arena->currentOffset == 0, "check that offset has cleared");
+    ASSERT_TRUE(arena->nextNode != NULL, "check next status");
+    ASSERT_TRUE(arena->prevNode == NULL, "check prev status");
 
     burnItDown(&arena);
-    return status;
 }
 
-int testScratchPad() {
-    int status = 0;
+void testScratchPad() {
     struct Arena *arena = createArena(50 * sizeof(float));
     // sanity check
-    status = ASSERT_TRUE(arena->size == (50 * sizeof(float)), status);
+    ASSERT_TRUE(arena->size == (50 * sizeof(float)),
+                "check initial size of the arena");
 
     // alloc some mem and use that as the start of the pad
     float *a = mallocArena(&arena, 20 * sizeof(float));
-    status = ASSERT_TRUE(a != NULL, status);
-    status = ASSERT_TRUE(arena->size == (50 * sizeof(float)), status);
-    status = ASSERT_TRUE(arena->currentOffset == (20 * sizeof(float)), status);
+    ASSERT_TRUE(a != NULL, "check that given pointer is not null");
+    ASSERT_TRUE(arena->size == (50 * sizeof(float)),
+                "check that size is the same");
+    ASSERT_TRUE(arena->currentOffset == (20 * sizeof(float)),
+                "check that the offset is equal to the alloc");
     void *oldStart = arena->start;
 
     void *returnPoint = startScratchPad(arena);
 
     float *b = mallocArena(&arena, 40 * sizeof(float));
     float *c = mallocArena(&arena, 40 * sizeof(float));
-    status = ASSERT_TRUE(b != NULL, status);
-    status = ASSERT_TRUE(c != NULL, status);
+    ASSERT_TRUE(b != NULL, "check that the new alloc is not null");
+    ASSERT_TRUE(c != NULL, "check that the other new alloc is not null");
 
-    status = ASSERT_TRUE(arena->currentOffset == (40 * sizeof(float)), status);
-    status = ASSERT_TRUE(arena->nextNode == NULL, status);
-    status = ASSERT_TRUE(arena->prevNode != NULL, status);
+    ASSERT_TRUE(arena->currentOffset == (40 * sizeof(float)),
+                "check arena current offset");
+    ASSERT_TRUE(arena->nextNode == NULL, "check that next node is null");
+    ASSERT_TRUE(arena->prevNode != NULL,
+                "check that the prev node is not null");
 
     restoreSratchPad(&arena, returnPoint);
-    status = ASSERT_TRUE(arena->currentOffset == (20 * sizeof(float)), status);
-    status = ASSERT_TRUE(arena->nextNode != NULL, status);
-    status = ASSERT_TRUE(arena->prevNode == NULL, status);
-    status = ASSERT_TRUE(arena->start == oldStart, status);
+    ASSERT_TRUE(arena->currentOffset == (20 * sizeof(float)),
+                "check that the offset still makes sense");
+    ASSERT_TRUE(arena->nextNode != NULL, "check that the next node is not null "
+                                         "since we should have gone back one");
+    ASSERT_TRUE(arena->prevNode == NULL,
+                "check that there is no prev node now");
+    ASSERT_TRUE(arena->start == oldStart,
+                "check that the arena is back to where is started");
 
     burnItDown(&arena);
-    return status;
 }
 
 int main() {
-    int totalPassed = 0;
-    int status = 0;
-    status = testCreateArena();
-    totalPassed += status == 0 ? 1 : 0;
-    printf("testCreateArena: returned with %d\n", status);
-    status = testAllocMemory();
-    totalPassed += status == 0 ? 1 : 0;
-    printf("testAllocMemory: returned with %d\n", status);
-    status = testZAllocMemory();
-    totalPassed += status == 0 ? 1 : 0;
-    printf("testZAllocMemory: returned with %d\n", status);
-    status = testFreeArena();
-    totalPassed += status == 0 ? 1 : 0;
-    printf("testFreeArena: returned with %d\n", status);
-    status = testScratchPad();
-    totalPassed += status == 0 ? 1 : 0;
-    printf("testScratchPad: returned with %d\n", status);
-    printf("number of tests passed %d out of %d\n", totalPassed, 5);
+    struct Arena *memory = createArena(DEFAULT_SIZE);
+    setUp(memory);
+    ADD_TEST(testCreateArena);
+    ADD_TEST(testAllocMemory);
+    ADD_TEST(testZAllocMemory);
+    ADD_TEST(testFreeArena);
+    ADD_TEST(testScratchPad);
+    return runTest();
 }
 #endif
