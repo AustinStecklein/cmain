@@ -40,9 +40,8 @@ ARRAY(struct Assert) assertCollection = NEW_ARRAY();
 // setup functions
 #define ADD_TEST(function) \
 		do { \
-			struct UnitTest newTest = {(function), "function", 0}; \
+			struct UnitTest newTest = {(function), #function ,0}; \
 			PUSH_ARRAY(testCollection, newTest); \
-			printf("the size tests: %d in the macro\n", (int)testCollection.size); \
 		} while(0) \
 
 void setUp(struct Arena * currentAllocator) {
@@ -70,23 +69,35 @@ int main() {
 	setUp(memory);
 	ADD_TEST(firstTest);
 	ADD_TEST(secondTest);
-	printf("about to loop through the lists\n");
-	printf("the size tests: %d\n", (int)testCollection.size);
+	int passedTestCount = 0;
 	// run through all of the tests and then check if any asserts are fired during the test
 	for (int i = 0; i < testCollection.size; i++) {
 		// start with clearing assert collection
 		CLEAR_ARRAY(assertCollection);
 		// the assert collection will be filled by the user defined test function through
 		// the ASSERT_* macros
-		printf("Running function %s\n", testCollection.items[i].functionName);
+		char allTestsPassed = 1;
+		printf("%s: ", testCollection.items[i].functionName);
 		(testCollection.items[i].function)();
 		for (int j = 0; j < assertCollection.size; j++) {
-			if (assertCollection.items[i].passed)
-				printf("Assert %s has PASSED\n", testCollection.items[i].functionName);
-			else
-				printf("Assert %s has FAILED\n", testCollection.items[i].functionName);
+			if (!assertCollection.items[i].passed)
+				allTestsPassed = 0;
+		}
+		if (allTestsPassed) {
+			printf("\e[1;32m PASSED\e[0m\n");
+			passedTestCount++;
+		}
+		else {
+			// only going to reloop if there has been a single failure
+			printf("\e[1;31m FAILED\e[0m\n");
+			for (int j = 0; j < assertCollection.size; j++) {
+				if (assertCollection.items[i].passed)
+					printf("\tAssert %s has \e[1;32mPASSED\e[0m\n", assertCollection.items[i].assertName);
+				else
+					printf("\tAssert %s has \e[1;31mFAILED\e[0m\n", assertCollection.items[i].assertName);
+			}
 		}
 	}
-
+	printf("%d test(s) passed out of %d\n", passedTestCount, (int)testCollection.size);
 	return 0;
 }
