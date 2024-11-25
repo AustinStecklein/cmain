@@ -63,7 +63,7 @@
     } while (0)
 
 // Set size to zero which will do a lazy clear
-#define CLEAR_ARRAY(array)                                                      \
+#define CLEAR_ARRAY(array)                                                     \
     do {                                                                       \
         (array).size = 0;                                                      \
     } while (0)
