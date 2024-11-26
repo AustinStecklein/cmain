@@ -86,5 +86,6 @@ int runTest() {
     }
     printf("%d test(s) passed out of %d\n", passedTestCount,
            (int)testCollection.size);
+	burnItDown(&testCollection.arena);
     return passedTestCount == (int)testCollection.size;
 }
