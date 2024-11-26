@@ -48,6 +48,11 @@ void setUp(struct Arena *currentAllocator) {
 }
 
 int runTest() {
+    if (!ARRAY_INITIALIZED(testCollection) ||
+        !ARRAY_INITIALIZED(assertCollection)) {
+        printf("The unit test file must call 'setUp' before calling 'runTest'");
+        return -1;
+    }
     int passedTestCount = 0;
     // run through all of the tests and then check if any asserts are fired
     // during the test

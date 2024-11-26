@@ -88,6 +88,9 @@
         (array).size++;                                                        \
     } while (0)
 
+// turns true if the array has been initialized
+#define ARRAY_INITIALIZED(array) ((array).arena != NULL)
+
 // since this will be with an arena vector there is no way to free the memory.
 // This means that memory will be used until the arena is completely free. This
 // is why these arrays should be small.
