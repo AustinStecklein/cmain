@@ -29,7 +29,7 @@ unittest.o: unittest.c unittest.h array.h arena.h arena.c
 unittest: unittest.o arena.o
 	$(CC) $(LD_FLAGS) arena.o unittest.o -o ./build/unittest
 
-string.o: string.c array.h arena.h
+string.o: string.c array.h arena.h string.h
 	$(CC) $(CC_FLAGS) $(DEBUG) -c string.c
 
 string: string.o arena.o
