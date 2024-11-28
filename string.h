@@ -1,34 +1,31 @@
-#include <string.h> // for memcmp
 #include "array.h"
+#include <string.h> // for memcmp
 
-struct FixedString {
-    FIXED_ARRAY(char) array;
-};
+typedef FIXED_ARRAY(char) FixedString;
 
-char *getChar(struct FixedString string) { return (string.array.items); }
+char *getChar(FixedString string) { return (string.items); }
 
-struct FixedString getStringFromChar(char *string, size_t size) {
-    struct FixedString newString = {{string, size, size}};
+FixedString getStringFromChar(char *string, size_t size) {
+    FixedString newString = {string, size, size};
     return newString;
 }
 
-struct FixedString getStringFromString(struct FixedString string) {
-    struct FixedString newString = {
-        {string.array.items, string.array.size, string.array.size}};
+FixedString getStringFromString(FixedString string) {
+    FixedString newString = {string.items, string.size, string.size};
     return newString;
 }
 
 // copy the contents of the string. This is using fixed array size.
-struct FixedString copyStringFromChar(char *string, size_t size) {
-    struct FixedString newString = {NEW_FIXED_ARRAY()};
-    INIT_FIXED_ARRAY(newString.array, size);
-    memcpy(newString.array.items, string, size);
+FixedString copyStringFromChar(char *string, size_t size) {
+    FixedString newString = NEW_FIXED_ARRAY();
+    INIT_FIXED_ARRAY(newString, size);
+    memcpy(newString.items, string, size);
     return newString;
 }
 
-struct FixedString copyStringFromString(struct FixedString string) {
-    struct FixedString newString = {NEW_FIXED_ARRAY()};
-    INIT_FIXED_ARRAY(newString.array, string.array.size);
-    memcpy(newString.array.items, string.array.items, string.array.size);
+FixedString copyStringFromString(FixedString string) {
+    FixedString newString = NEW_FIXED_ARRAY();
+    INIT_FIXED_ARRAY(newString, string.size);
+    memcpy(newString.items, string.items, string.size);
     return newString;
 }
