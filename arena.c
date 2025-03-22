@@ -22,21 +22,26 @@ struct Arena *createArena() {
     // of the page will be used for user data
     uint32_t size = getpagesize();
     // build the arena! "is that a freaking void pointer - mike"
-    void *page_start = mmap(NULL, size, PROT_READ | PROT_WRITE,
-                            MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+#ifdef VALGRIND
+    // it is just easier to use the heap with valgrind
+    void *pageStart = malloc(size);
+#else
+    void *pageStart = mmap(NULL, size, PROT_READ | PROT_WRITE,
+                           MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+#endif
 
-    struct Arena *arena = page_start;
+    struct Arena *arena = pageStart;
     if (arena == NULL) {
         DEBUG_PRINT("Fatal: Initial arena alloc failed\n");
         return NULL;
     }
-    arena->start = page_start + sizeof(struct Arena);
+    arena->start = pageStart + sizeof(struct Arena);
     arena->currentOffset = 0;
     arena->size = 0;
     arena->prevNode = NULL;
     arena->nextNode = NULL;
     if (arena->start != NULL) {
-        arena->size = size - (arena->start - page_start);
+        arena->size = size - (arena->start - pageStart);
     }
     else {
         DEBUG_PRINT("Fatal: Internal arena alloc failed\n");
@@ -80,9 +85,13 @@ void burnItDown(struct Arena **arena) {
     // free all of the pointers now
     if ((*arena)->start != NULL) {
 #ifdef ARENA_DEBUG
+#ifdef VALGRIND
+        free((*arena)->start - sizeof(struct Arena));
+        int error_code = 0;
+#else
         int error_code = munmap((*arena)->start - sizeof(struct Arena),
                                 (*arena)->size + sizeof(struct Arena));
-
+#endif
         // this will allocate memory from the heap instead of from the arena so
         // this is hidden behind the debug flag
         if (error_code != 0) {
@@ -100,9 +109,12 @@ void burnItDown(struct Arena **arena) {
             }
         }
 #else
+#ifdef VALGRIND
+        free((*arena)->start - sizeof(struct Arena));
+#else
         munmap((*arena)->start - sizeof(struct Arena),
                (*arena)->size + sizeof(struct Arena));
-
+#endif
 #endif
 
     }
@@ -178,12 +190,21 @@ void *mallocArena(struct Arena **arena, int32_t size) {
                     "than one arena node\n");
         return NULL;
     }
-
+    // get the alignment offset
+    uint64_t alignment = size;
+    if (size > 8)
+        alignment = 8;
     // already room in this node. Lets use it.
     if ((*arena)->size >= (size + (*arena)->currentOffset)) {
-        void *startOfRegion = (*arena)->start + (*arena)->currentOffset;
-        (*arena)->currentOffset += size;
-        return startOfRegion;
+        // check that there is still room if we add the alignment offset
+        void *currentFree = (*arena)->start + (*arena)->currentOffset;
+        void *startOfRegion =
+            (void *)(((uint64_t)currentFree + (alignment - 1)) &
+                     ~(alignment - 1));
+        if (startOfRegion <= ((*arena)->start + (*arena)->size)) {
+            (*arena)->currentOffset += size + (startOfRegion - currentFree);
+            return startOfRegion;
+        }
     }
 
     // check if the next node exists and if it does use that before creating
@@ -285,6 +306,8 @@ void testAllocMemory() {
 
     // test with a single node
     float *a = mallocArena(&arena, 20 * sizeof(float));
+    ASSERT_TRUE((uint64_t)a % sizeof(float) == 0,
+                "check returned memory is aligned");
     ASSERT_TRUE(arena->size == size, "check arena size");
     ASSERT_TRUE(arena->currentOffset == (20 * sizeof(float)),
                 "check current offset");
@@ -300,6 +323,8 @@ void testAllocMemory() {
     // alloc four more times to show that the arena builds a linked list
     float *b = mallocArena(&arena, 10 * sizeof(float));
     ASSERT_TRUE(b != NULL, "check malloc'ed pointer status");
+    ASSERT_TRUE((uint64_t)b % sizeof(float) == 0,
+                "check returned memory is aligned");
     ASSERT_TRUE(arena->currentOffset == (30 * sizeof(float)),
                 "check current offset");
     ASSERT_TRUE(arena->nextNode == NULL, "check next status");
@@ -311,6 +336,8 @@ void testAllocMemory() {
 
     float *c = mallocArena(&arena, 40 * sizeof(float));
     ASSERT_TRUE(c != NULL, "check malloc'ed pointer status");
+    ASSERT_TRUE((uint64_t)c % sizeof(float) == 0,
+                "check returned memory is aligned");
     ASSERT_TRUE(arena->size == size, "check arena size");
     // the last node should not have any space at this point so this should be
     // the first private node
@@ -326,6 +353,8 @@ void testAllocMemory() {
 
     float *d = mallocArena(&arena, 50 * sizeof(float));
     ASSERT_TRUE(d != NULL, "check malloc'ed pointer status");
+    ASSERT_TRUE((uint64_t)d % sizeof(float) == 0,
+                "check returned memory is aligned");
     ASSERT_TRUE(arena->size == size, "check arena size");
     // the last node should not have any space at this point so this should be
     // the first private node
@@ -372,8 +401,8 @@ void testFreeArena() {
                 "check the offset now");
 
     // throwaway alloc to fill the current node
-    uint32_t buffer_memory = arena->size - arena->currentOffset;
-    float *y = mallocArena(&arena, buffer_memory);
+    uint32_t bufferMemory = arena->size - arena->currentOffset;
+    float *y = mallocArena(&arena, bufferMemory);
     ASSERT_TRUE(y != NULL, "check malloc'ed pointer status");
 
     float *b = mallocArena(&arena, 40 * sizeof(float));
@@ -393,7 +422,7 @@ void testFreeArena() {
     ASSERT_TRUE(arena->nextNode == NULL, "check next status");
     ASSERT_TRUE(arena->prevNode != NULL, "check prev status");
 
-    freeArena(&arena, 35 * sizeof(float) + (buffer_memory));
+    freeArena(&arena, 35 * sizeof(float) + (bufferMemory));
     ASSERT_TRUE(arena->currentOffset == (10 * sizeof(float)),
                 "check the offset");
     ASSERT_TRUE(arena->nextNode != NULL, "check next status");
@@ -431,8 +460,8 @@ void testScratchPad() {
 
     float *b = mallocArena(&arena, 40 * sizeof(float));
 
-    uint32_t buffer_memory = arena->size - arena->currentOffset;
-    float *x = mallocArena(&arena, buffer_memory);
+    uint32_t bufferMemory = arena->size - arena->currentOffset;
+    float *x = mallocArena(&arena, bufferMemory);
     ASSERT_TRUE(x != NULL, "check malloc'ed pointer status");
 
     float *c = mallocArena(&arena, 40 * sizeof(float));
@@ -458,6 +487,34 @@ void testScratchPad() {
     burnItDown(&arena);
 }
 
+void testMemoryAlignment() {
+    // show that memory will be auto aligned
+    uint32_t size = getpagesize() - sizeof(struct Arena);
+    struct Arena *arena = createArena();
+    // sanity check
+    ASSERT_TRUE(arena->size == size, "check initial size of the arena");
+
+    uint32_t *a = mallocArena(&arena, sizeof(uint32_t));
+    ASSERT_TRUE((uint64_t)a % sizeof(uint32_t) == 0,
+                "check returned memory is aligned");
+    ASSERT_TRUE(arena->size == size, "check arena size");
+    ASSERT_TRUE(arena->currentOffset == sizeof(uint32_t),
+                "check current offset");
+
+    char *b = mallocArena(&arena, sizeof(char));
+    ASSERT_TRUE((uint64_t)b % sizeof(char) == 0,
+                "check returned memory is aligned");
+
+    char *c = mallocArena(&arena, sizeof(char));
+    ASSERT_TRUE((uint64_t)c % sizeof(char) == 0,
+                "check returned memory is aligned");
+
+    uint64_t *d = mallocArena(&arena, sizeof(uint64_t));
+    ASSERT_TRUE((uint64_t)d % sizeof(uint64_t) == 0,
+                "check returned memory is aligned");
+    burnItDown(&arena);
+}
+
 int main() {
     struct Arena *memory = createArena();
     setUp(memory);
@@ -466,6 +523,7 @@ int main() {
     ADD_TEST(testZAllocMemory);
     ADD_TEST(testFreeArena);
     ADD_TEST(testScratchPad);
+    ADD_TEST(testMemoryAlignment);
     return runTest();
 }
 #endif

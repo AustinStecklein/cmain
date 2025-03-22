@@ -6,11 +6,18 @@ DEBUG = -ggdb3
 debug_arena.o: arena.h arena.c
 	$(CC) $(CC_FLAGS) -DARENA_DEBUG -c arena.c
 
+debug_arena_val.o: arena.h arena.c
+	$(CC) $(CC_FLAGS) -DARENA_DEBUG -DVALGRIND -c arena.c
+
 arena.o: arena.h arena.c
 	$(CC) $(CC_FLAGS) -c arena.c
 
 arena: debug_arena.o
 	$(CC) $(LD_FLAGS) arena.o -o ./build/arena
+
+arena_val: debug_arena_val.o
+	$(CC) $(LD_FLAGS) arena.o -o ./build/arena_val
+	valgrind --leak-check=full ./build/arena_val
 
 array.o: array.c array.h arena.h arena.c unittest.h
 	$(CC) $(CC_FLAGS) -c array.c
@@ -29,6 +36,7 @@ string.o: string.c array.h arena.h string.h
 
 string: string.o arena.o
 	$(CC) $(LD_FLAGS) arena.o string.o -o ./build/string
+
 
 .PHONY: clean
 clean:
