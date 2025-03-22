@@ -37,7 +37,7 @@ void testFixedString() {
 }
 
 int main() {
-    struct Arena *memory = createArena(DEFAULT_SIZE);
+    struct Arena *memory = createArena();
     setUp(memory);
     ADD_TEST(testFixedStringChar);
     ADD_TEST(testFixedString);

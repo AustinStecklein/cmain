@@ -26,7 +26,7 @@ struct Arena;
 // arena creation
 // Since size is a uint32 the max total arena size is 2^32. If you need more
 // than that then you are crazy
-struct Arena *createArena(uint32_t size);
+struct Arena *createArena();
 
 // destroy the arena. The arena pointer will be returned as null
 void burnItDown(struct Arena **arena);

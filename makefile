@@ -3,11 +3,6 @@ CC_FLAGS = -Wall
 LD_FLAGS = -lm
 DEBUG = -ggdb3
 
-clean:
-	rm *.o
-	rm ./build/*
-	rm *.gch
-
 debug_arena.o: arena.h arena.c
 	$(CC) $(CC_FLAGS) -DARENA_DEBUG -c arena.c
 
@@ -34,3 +29,11 @@ string.o: string.c array.h arena.h string.h
 
 string: string.o arena.o
 	$(CC) $(LD_FLAGS) arena.o string.o -o ./build/string
+
+.PHONY: clean
+clean:
+	rm *.o
+	rm ./build/*
+	rm *.gch
+
+

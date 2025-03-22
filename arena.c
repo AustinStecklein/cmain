@@ -2,7 +2,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <sys/mman.h> // mmap
+#include <unistd.h>   // getpagesize
 
 struct Arena {
     struct Arena *prevNode;
@@ -12,26 +13,32 @@ struct Arena {
     uint32_t size;
 };
 
-struct Arena *createArena(uint32_t size) {
-    // We have to allocate this on the heap that way the life time lasts longer
-    // then this function call. We could have the user pass in an arena type
-    // that way the caller is in charge of lifetime.
-    struct Arena *arena = malloc(sizeof(struct Arena));
+struct Arena *createArena() {
+    // the arena will create a chunk that is the size of the current page size.
+    // This is not great as it means that 4096 is largest continuous memory
+    // aloud. This could be changed to take in a size but for now if something
+    // is that large just statically allocate it.
+    // The object itself will be stored at the start of the page. Then the rest
+    // of the page will be used for user data
+    uint32_t size = getpagesize();
+    // build the arena! "is that a freaking void pointer - mike"
+    void *page_start = mmap(NULL, size, PROT_READ | PROT_WRITE,
+                            MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+
+    struct Arena *arena = page_start;
     if (arena == NULL) {
         DEBUG_PRINT("Fatal: Initial arena alloc failed\n");
         return NULL;
     }
-    // build the arena!
-    // again a single malloc is used for the node and size so the start is just
-    // after the header
-    arena->start = malloc(size);
+    arena->start = page_start + sizeof(struct Arena);
     arena->currentOffset = 0;
     arena->size = 0;
     arena->prevNode = NULL;
     arena->nextNode = NULL;
     if (arena->start != NULL) {
-        arena->size = size;
-    } else {
+        arena->size = size - (arena->start - page_start);
+    }
+    else {
         DEBUG_PRINT("Fatal: Internal arena alloc failed\n");
     }
     return arena;
@@ -41,7 +48,7 @@ struct Arena *createArena(uint32_t size) {
 struct Arena *createArenaNode(struct Arena *prev) {
     // This is the same as createArena yet it is building a node
     // on a linked list
-    struct Arena *arena = createArena(prev->size);
+    struct Arena *arena = createArena();
     if (arena == NULL) {
         DEBUG_PRINT(
             "Fatal: createArenaNode was unable to allocate another node to "
@@ -72,13 +79,37 @@ void burnItDown(struct Arena **arena) {
     }
     // free all of the pointers now
     if ((*arena)->start != NULL) {
-        free((*arena)->start);
-        (*arena)->start = NULL;
-    } else {
-        DEBUG_PRINT("Warning the start pointer passed to `burnItDown` was "
-                    "already freed");
+#ifdef ARENA_DEBUG
+        int error_code = munmap((*arena)->start - sizeof(struct Arena),
+                                (*arena)->size + sizeof(struct Arena));
+
+        // this will allocate memory from the heap instead of from the arena so
+        // this is hidden behind the debug flag
+        if (error_code != 0) {
+            char *log_message;
+            if (asprintf(&log_message,
+                         "Fatal error %d occured while attempting to free "
+                         "arena memeo\n",
+                         error_code) > 0) {
+                DEBUG_PRINT(log_message);
+            }
+            else {
+                // if asprintf fails still log a message
+                DEBUG_PRINT("Fatal error occured while attempting to free "
+                            "arena memory\n");
+            }
+        }
+#else
+        munmap((*arena)->start - sizeof(struct Arena),
+               (*arena)->size + sizeof(struct Arena));
+
+#endif
+
     }
-    free(*arena);
+    else {
+        DEBUG_PRINT("Warning the start pointer passed to `burnItDown` was "
+                    "already freed\n");
+    }
     *arena = NULL;
 }
 
@@ -128,7 +159,8 @@ int freeArena(struct Arena **arena, uint32_t size) {
         }
         *arena = local_arena_pointer;
         return status;
-    } else {
+    }
+    else {
         // no need to update the arena pointer
         (*arena)->currentOffset -= size;
         return 0;
@@ -201,7 +233,8 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
         // The restore point is within this node
         (*arena)->currentOffset = restorePoint - (*arena)->start;
         return 0;
-    } else {
+    }
+    else {
         if ((*arena)->prevNode == NULL) {
             DEBUG_PRINT(
                 "Warning `restoreStrachPad` was unable to find the node that "
@@ -231,8 +264,9 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
 #include "unittest.h"
 void testCreateArena() {
     // test the creation of the arena
-    struct Arena *arena = createArena(50 * sizeof(int));
-    ASSERT_TRUE(arena->size == (50 * sizeof(int)), "check arena size");
+    uint32_t size = getpagesize() - sizeof(struct Arena);
+    struct Arena *arena = createArena();
+    ASSERT_TRUE(arena->size == size, "check arena size");
     ASSERT_TRUE(arena->currentOffset == 0, "check current offset");
     ASSERT_TRUE(arena->nextNode == NULL, "check next status");
     ASSERT_TRUE(arena->prevNode == NULL, "check prev status");
@@ -244,13 +278,14 @@ void testCreateArena() {
 }
 
 void testAllocMemory() {
-    struct Arena *arena = createArena(50 * sizeof(float));
+    uint32_t size = getpagesize() - sizeof(struct Arena);
+    struct Arena *arena = createArena();
     // sanity check
-    ASSERT_TRUE(arena->size == (50 * sizeof(float)), "check arena size");
+    ASSERT_TRUE(arena->size == size, "check arena size");
 
     // test with a single node
     float *a = mallocArena(&arena, 20 * sizeof(float));
-    ASSERT_TRUE(arena->size == (50 * sizeof(float)), "check arena size");
+    ASSERT_TRUE(arena->size == size, "check arena size");
     ASSERT_TRUE(arena->currentOffset == (20 * sizeof(float)),
                 "check current offset");
     ASSERT_TRUE(arena->nextNode == NULL, "check next status");
@@ -270,9 +305,13 @@ void testAllocMemory() {
     ASSERT_TRUE(arena->nextNode == NULL, "check next status");
     ASSERT_TRUE(arena->prevNode == NULL, "check prev status");
 
+    // throwaway alloc to fill the current node
+    float *x = mallocArena(&arena, arena->size - arena->currentOffset);
+    ASSERT_TRUE(x != NULL, "check malloc'ed pointer status");
+
     float *c = mallocArena(&arena, 40 * sizeof(float));
     ASSERT_TRUE(c != NULL, "check malloc'ed pointer status");
-    ASSERT_TRUE(arena->size == (50 * sizeof(float)), "check arena size");
+    ASSERT_TRUE(arena->size == size, "check arena size");
     // the last node should not have any space at this point so this should be
     // the first private node
     ASSERT_TRUE(arena->currentOffset == (40 * sizeof(float)),
@@ -281,9 +320,13 @@ void testAllocMemory() {
     ASSERT_TRUE(arena->prevNode != NULL, "check prev status");
 
     // one more time!
+    // throwaway alloc to fill the current node
+    float *y = mallocArena(&arena, arena->size - arena->currentOffset);
+    ASSERT_TRUE(y != NULL, "check malloc'ed pointer status");
+
     float *d = mallocArena(&arena, 50 * sizeof(float));
     ASSERT_TRUE(d != NULL, "check malloc'ed pointer status");
-    ASSERT_TRUE(arena->size == (50 * sizeof(float)), "check arena size");
+    ASSERT_TRUE(arena->size == size, "check arena size");
     // the last node should not have any space at this point so this should be
     // the first private node
     ASSERT_TRUE(arena->currentOffset == (50 * sizeof(float)),
@@ -295,13 +338,14 @@ void testAllocMemory() {
 }
 
 void testZAllocMemory() {
-    struct Arena *arena = createArena(50 * sizeof(float));
+    uint32_t size = getpagesize() - sizeof(struct Arena);
+    struct Arena *arena = createArena();
     // sanity check
-    ASSERT_TRUE(arena->size == (50 * sizeof(float)), "check size");
+    ASSERT_TRUE(arena->size == size, "check size");
 
     // test with a single node
     float *a = zmallocArena(&arena, 20 * sizeof(float));
-    ASSERT_TRUE(arena->size == (50 * sizeof(float)), "check malloc size");
+    ASSERT_TRUE(arena->size == size, "check malloc size");
     ASSERT_TRUE(arena->currentOffset == (20 * sizeof(float)),
                 "check current offset");
     ASSERT_TRUE(arena->nextNode == NULL, "check next status");
@@ -315,25 +359,30 @@ void testZAllocMemory() {
 }
 
 void testFreeArena() {
-    struct Arena *arena = createArena(50 * sizeof(float));
+    uint32_t size = getpagesize() - sizeof(struct Arena);
+    struct Arena *arena = createArena();
     // sanity check
-    ASSERT_TRUE(arena->size == (50 * sizeof(float)), "check initial size");
+    ASSERT_TRUE(arena->size == size, "check initial size");
 
     // test with a single node
     float *a = mallocArena(&arena, 20 * sizeof(float));
     ASSERT_TRUE(a != NULL, "check that a is not null to start");
-    ASSERT_TRUE(arena->size == (50 * sizeof(float)),
-                "check that the size is correct");
+    ASSERT_TRUE(arena->size == size, "check that the size is correct");
     ASSERT_TRUE(arena->currentOffset == (20 * sizeof(float)),
                 "check the offset now");
 
+    // throwaway alloc to fill the current node
+    uint32_t buffer_memory = arena->size - arena->currentOffset;
+    float *y = mallocArena(&arena, buffer_memory);
+    ASSERT_TRUE(y != NULL, "check malloc'ed pointer status");
+
     float *b = mallocArena(&arena, 40 * sizeof(float));
     ASSERT_TRUE(b != NULL, "check malloc'ed pointer status");
-    ASSERT_TRUE(arena->size == (50 * sizeof(float)),
-                "check that the size increased");
+    ASSERT_TRUE(arena->size == size, "check that the size increased");
+
     // the last node should not have any space at this point so this should be
     // the first private node
-    ASSERT_TRUE(arena->currentOffset == (40 * sizeof(float)), "chelc offset");
+    ASSERT_TRUE(arena->currentOffset == (40 * sizeof(float)), "check offset");
     ASSERT_TRUE(arena->nextNode == NULL, "check next status");
     ASSERT_TRUE(arena->prevNode != NULL, "check prev status");
 
@@ -344,7 +393,7 @@ void testFreeArena() {
     ASSERT_TRUE(arena->nextNode == NULL, "check next status");
     ASSERT_TRUE(arena->prevNode != NULL, "check prev status");
 
-    freeArena(&arena, 35 * sizeof(float));
+    freeArena(&arena, 35 * sizeof(float) + (buffer_memory));
     ASSERT_TRUE(arena->currentOffset == (10 * sizeof(float)),
                 "check the offset");
     ASSERT_TRUE(arena->nextNode != NULL, "check next status");
@@ -365,16 +414,15 @@ void testFreeArena() {
 }
 
 void testScratchPad() {
-    struct Arena *arena = createArena(50 * sizeof(float));
+    uint32_t size = getpagesize() - sizeof(struct Arena);
+    struct Arena *arena = createArena();
     // sanity check
-    ASSERT_TRUE(arena->size == (50 * sizeof(float)),
-                "check initial size of the arena");
+    ASSERT_TRUE(arena->size == size, "check initial size of the arena");
 
     // alloc some mem and use that as the start of the pad
     float *a = mallocArena(&arena, 20 * sizeof(float));
     ASSERT_TRUE(a != NULL, "check that given pointer is not null");
-    ASSERT_TRUE(arena->size == (50 * sizeof(float)),
-                "check that size is the same");
+    ASSERT_TRUE(arena->size == size, "check that size is the same");
     ASSERT_TRUE(arena->currentOffset == (20 * sizeof(float)),
                 "check that the offset is equal to the alloc");
     void *oldStart = arena->start;
@@ -382,6 +430,11 @@ void testScratchPad() {
     void *returnPoint = startScratchPad(arena);
 
     float *b = mallocArena(&arena, 40 * sizeof(float));
+
+    uint32_t buffer_memory = arena->size - arena->currentOffset;
+    float *x = mallocArena(&arena, buffer_memory);
+    ASSERT_TRUE(x != NULL, "check malloc'ed pointer status");
+
     float *c = mallocArena(&arena, 40 * sizeof(float));
     ASSERT_TRUE(b != NULL, "check that the new alloc is not null");
     ASSERT_TRUE(c != NULL, "check that the other new alloc is not null");
@@ -406,7 +459,7 @@ void testScratchPad() {
 }
 
 int main() {
-    struct Arena *memory = createArena(DEFAULT_SIZE);
+    struct Arena *memory = createArena();
     setUp(memory);
     ADD_TEST(testCreateArena);
     ADD_TEST(testAllocMemory);

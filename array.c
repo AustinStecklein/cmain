@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 void testDynamicArray() {
-    struct Arena *arrayArena = createArena(DEFAULT_SIZE);
+    struct Arena *arrayArena = createArena();
     ARRAY(int) collection = NEW_ARRAY();
     INIT_ARRAY(collection, arrayArena);
     PUSH_ARRAY(collection, 5);
@@ -39,7 +39,7 @@ void testStaticArray() {
 }
 
 void testClearArray() {
-    struct Arena *arrayArena = createArena(DEFAULT_SIZE);
+    struct Arena *arrayArena = createArena();
     ARRAY(int) collection = NEW_ARRAY();
     INIT_ARRAY(collection, arrayArena);
     PUSH_ARRAY(collection, 5);
@@ -55,7 +55,7 @@ void testClearArray() {
 }
 
 void testCheckInitializedArray() {
-    struct Arena *arrayArena = createArena(DEFAULT_SIZE);
+    struct Arena *arrayArena = createArena();
     ARRAY(int) collection = NEW_ARRAY();
     ASSERT_FALSE((ARRAY_INITIALIZED(collection)),
                  "Check that array is not showing as initialized");
@@ -66,7 +66,7 @@ void testCheckInitializedArray() {
 }
 
 int main() {
-    struct Arena *memory = createArena(DEFAULT_SIZE);
+    struct Arena *memory = createArena();
     setUp(memory);
     ADD_TEST(testDynamicArray);
     ADD_TEST(testStaticArray);
