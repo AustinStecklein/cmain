@@ -2,8 +2,7 @@
 #include "unittest.h"
 #include <stdio.h>
 
-void testDynamicArray() {
-    struct Arena *arrayArena = createArena();
+void testDynamicArray(struct Arena *arrayArena) {
     ARRAY(int) collection = NEW_ARRAY();
     INIT_ARRAY(collection, arrayArena);
     PUSH_ARRAY(collection, 5);
@@ -20,13 +19,9 @@ void testDynamicArray() {
     ASSERT_TRUE(collection.items[5] == 3, "check sixth item");
     ASSERT_TRUE(collection.size == 6, "check size");
     ASSERT_TRUE(collection.alloc == 8, "check alloc'ed size");
-
-    // check clean up
-    burnItDown(&arrayArena);
-    ASSERT_TRUE(arrayArena == NULL, "check cleanup");
 }
 
-void testStaticArray() {
+void testStaticArray(struct Arena*) {
     FIXED_ARRAY(float) collection = NEW_FIXED_ARRAY();
     INIT_FIXED_ARRAY(collection, 1024);
     PUSH_FIXED_ARRAY(collection, 1.0f);
@@ -38,8 +33,7 @@ void testStaticArray() {
     FREE_FIXED_ARRAY(collection);
 }
 
-void testClearArray() {
-    struct Arena *arrayArena = createArena();
+void testClearArray(struct Arena *arrayArena) {
     ARRAY(int) collection = NEW_ARRAY();
     INIT_ARRAY(collection, arrayArena);
     PUSH_ARRAY(collection, 5);
@@ -51,18 +45,15 @@ void testClearArray() {
                 "Check that the initial size is expected");
     CLEAR_ARRAY(collection);
     ASSERT_TRUE(collection.size == 0, "Check that clear worked");
-    burnItDown(&arrayArena);
 }
 
-void testCheckInitializedArray() {
-    struct Arena *arrayArena = createArena();
+void testCheckInitializedArray(struct Arena *arrayArena) {
     ARRAY(int) collection = NEW_ARRAY();
     ASSERT_FALSE((ARRAY_INITIALIZED(collection)),
                  "Check that array is not showing as initialized");
     INIT_ARRAY(collection, arrayArena);
     ASSERT_TRUE((ARRAY_INITIALIZED(collection)),
                 "Check that array is showing as initialized");
-    burnItDown(&arrayArena);
 }
 
 int main() {

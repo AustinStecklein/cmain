@@ -1,7 +1,7 @@
 #include "string.h"
 #include "unittest.h"
 
-void testFixedStringChar() {
+void testFixedStringChar(struct Arena*) {
     FixedString string = getStringFromChar("test string", 12);
     ASSERT_TRUE(!memcmp(getChar(string), "test string", sizeof("test string")),
                 "Check the initialization of the fixed string from char");
@@ -18,7 +18,7 @@ void testFixedStringChar() {
                 "Check the original doesn't change");
 }
 
-void testFixedString() {
+void testFixedString(struct Arena*) {
     FixedString string = getStringFromChar("test string", 12);
     ASSERT_TRUE(!memcmp(getChar(getStringFromString(string)), "test string",
                         sizeof("test string")),

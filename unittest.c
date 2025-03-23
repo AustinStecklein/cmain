@@ -1,18 +1,18 @@
 #include "unittest.h"
 
-void firstTest() {
+void firstTest(struct Arena*) {
     ASSERT_TRUE(1, "test true");
     ASSERT_FALSE(0, "test false");
     return;
 }
 
-void secondTest() {
+void secondTest(struct Arena*) {
     ASSERT_TRUE(0, "test true");
     ASSERT_FALSE(1, "test false");
     return;
 }
 
-void thirdTest() {
+void thirdTest(struct Arena*) {
     ASSERT_TRUE(1, "test true");
     ASSERT_FALSE(1, "test false");
     return;

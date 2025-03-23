@@ -44,26 +44,25 @@ ARRAY(struct Assert) assertCollection = NEW_ARRAY();
 void setUp(struct Arena *currentAllocator) {
     allocator = currentAllocator;
     INIT_ARRAY(testCollection, allocator);
-    INIT_ARRAY(assertCollection, allocator);
 }
 
 int runTest() {
-    if (!ARRAY_INITIALIZED(testCollection) ||
-        !ARRAY_INITIALIZED(assertCollection)) {
-        printf("The unit test file must call 'setUp' before calling 'runTest'");
+    if (!ARRAY_INITIALIZED(testCollection)) {
+        printf("The unit test file must call 'setUp' before calling 'runTest'\n");
         return -1;
     }
     int passedTestCount = 0;
     // run through all of the tests and then check if any asserts are fired
     // during the test
     for (int i = 0; i < testCollection.size; i++) {
+        void * testStartingPoint = startScratchPad(allocator);
         // start with clearing assert collection
-        CLEAR_ARRAY(assertCollection);
+        INIT_ARRAY(assertCollection, allocator);
         // the assert collection will be filled by the user defined test
         // function through the ASSERT_* macros
         char allTestsPassed = 1;
         printf("%s: ", testCollection.items[i].functionName);
-        (testCollection.items[i].function)();
+        (testCollection.items[i].function)(allocator);
         for (int j = 0; j < assertCollection.size; j++) {
             if (!assertCollection.items[j].passed)
                 allTestsPassed = 0;
@@ -71,7 +70,8 @@ int runTest() {
         if (allTestsPassed) {
             printf("\e[1;32m PASSED\e[0m\n");
             passedTestCount++;
-        } else {
+        }
+        else {
             // only going to reloop if there has been a single failure
             printf("\e[1;31m FAILED\e[0m\n");
             for (int j = 0; j < assertCollection.size; j++) {
@@ -83,6 +83,8 @@ int runTest() {
                            assertCollection.items[j].assertName);
             }
         }
+        FREE_ARRAY(assertCollection);
+        restoreSratchPad(&allocator, testStartingPoint);
     }
     printf("%d test(s) passed out of %d\n", passedTestCount,
            (int)testCollection.size);

@@ -283,7 +283,7 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
 //
 #ifdef ARENA_DEBUG
 #include "unittest.h"
-void testCreateArena() {
+void testCreateArena(struct Arena*) {
     // test the creation of the arena
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
@@ -298,7 +298,7 @@ void testCreateArena() {
     ASSERT_TRUE(arena == NULL, "check cleanup");
 }
 
-void testAllocMemory() {
+void testAllocMemory(struct Arena*) {
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
@@ -366,7 +366,7 @@ void testAllocMemory() {
     burnItDown(&arena);
 }
 
-void testZAllocMemory() {
+void testZAllocMemory(struct Arena*) {
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
@@ -387,7 +387,7 @@ void testZAllocMemory() {
     burnItDown(&arena);
 }
 
-void testFreeArena() {
+void testFreeArena(struct Arena*) {
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
@@ -442,7 +442,7 @@ void testFreeArena() {
     burnItDown(&arena);
 }
 
-void testScratchPad() {
+void testScratchPad(struct Arena*) {
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
@@ -487,7 +487,7 @@ void testScratchPad() {
     burnItDown(&arena);
 }
 
-void testMemoryAlignment() {
+void testMemoryAlignment(struct Arena*) {
     // show that memory will be auto aligned
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
