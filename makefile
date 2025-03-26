@@ -1,47 +1,72 @@
+.DELETE_ON_ERROR:
 CC = gcc
-CC_FLAGS = -Wall
+CC_FLAGS = -Wall -MMD -MP
 LD_FLAGS = -lm
 DEBUG = -ggdb3
+ASM = nasm
+ASM_FLAGS = -felf64 -g
+LD = ld
 
-debug_arena.o: arena.h arena.c
-	$(CC) $(CC_FLAGS) -DARENA_DEBUG -c arena.c -o ./build/debug_arena.o
+BUILD_DIR := build
 
-debug_arena_val.o: arena.h arena.c
-	$(CC) $(CC_FLAGS) -DARENA_DEBUG -DVALGRIND -c arena.c -o ./build/debug_arena_val.o
+SRCS := $(shell find . -name '*.c' -or -name '*.s')
+OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
+DEPS := $(OBJS:.o=.d)
+ARENA_DEPS := $(BUILD_DIR)/arena.o
+ARRAY_DEPS := $(BUILD_DIR)/arena.o
+ARRAY_DEPS += $(BUILD_DIR)/array.o
 
-arena.o: arena.h arena.c
-	$(CC) $(CC_FLAGS) -c arena.c -o ./build/arena.o
+UNITTEST_DEPS := $(BUILD_DIR)/unittest.o
+UNITTEST_DEPS += $(BUILD_DIR)/arena.o
+STRING_DEPS := $(BUILD_DIR)/string.o
+STRING_DEPS += $(BUILD_DIR)/arena.o
 
-arena: debug_arena.o
-	$(CC) $(LD_FLAGS) ./build/debug_arena.o -o ./build/arena
+# build allocator for valgrind testing
+arena_mem: DEBUG += -DVALGRIND
+arena: DEBUG += -DARENA_DEBUG
+array_mem: DEBUG += -DVALGRIND
+unittest_mem: DEBUG += -DVALGRIND
+string_mem: DEBUG += -DVALGRIND
 
-arena_val: debug_arena_val.o
-	$(CC) $(LD_FLAGS) ./build/debug_arena_val.o -o ./build/arena_val
-	valgrind --leak-check=full ./build/arena_val
+# executables definitions
+arena: $(ARENA_DEPS)
+	$(CC) $(LD_FLAGS) $(ARENA_DEPS) -o $(BUILD_DIR)/$@
 
-array.o: array.c array.h arena.h arena.c unittest.h
-	$(CC) $(CC_FLAGS) -c array.c -o ./build/array.o
+arena_mem: $(ARENA_DEPS)
+	$(CC) $(LD_FLAGS) $(ARENA_DEPS) -o $(BUILD_DIR)/$@
+	valgrind --leak-check=full $(BUILD_DIR)/$@
 
-array: arena.o array.o unittest.h
-	$(CC) $(LD_FLAGS) ./build/array.o ./build/arena.o -o ./build/array
+array: $(ARRAY_DEPS)
+	$(CC) $(LD_FLAGS) $(ARRAY_DEPS) -o $(BUILD_DIR)/$@
 
-unittest.o: unittest.c unittest.h array.h arena.h arena.c
-	$(CC) $(CC_FLAGS) $(DEBUG) -c unittest.c -o ./build/unittest.o
+array_mem: $(ARRAY_DEPS)
+	$(CC) $(LD_FLAGS) $(ARRAY_DEPS) -o $(BUILD_DIR)/$@
+	valgrind --leak-check=full $(BUILD_DIR)/$@
 
-unittest: unittest.o arena.o
-	$(CC) $(LD_FLAGS) ./build/arena.o ./build/unittest.o -o ./build/unittest
+unittest: $(UNITTEST_DEPS)
+	$(CC) $(LD_FLAGS) $(UNITTEST_DEPS) -o $(BUILD_DIR)/$@
 
-string.o: string.c array.h arena.h string.h
-	$(CC) $(CC_FLAGS) $(DEBUG) -c string.c -o ./build/string.o
+unittest_mem: $(UNITTEST_DEPS)
+	$(CC) $(LD_FLAGS) $(UNITTEST_DEPS) -o $(BUILD_DIR)/$@
+	valgrind --leak-check=full $(BUILD_DIR)/$@
 
-string: string.o arena.o
-	$(CC) $(LD_FLAGS) ./build/arena.o ./build/string.o -o ./build/string
+string: $(STRING_DEPS)
+	$(CC) $(LD_FLAGS) $(STRING_DEPS) -o $(BUILD_DIR)/$@
 
+string_mem: $(STRING_DEPS)
+	$(CC) $(LD_FLAGS) $(STRING_DEPS) -o $(BUILD_DIR)/$@
+	valgrind --leak-check=full $(BUILD_DIR)/$@
+
+# Build step for general asm sources
+$(BUILD_DIR)/%.o: %.s
+	$(ASM) $(ASM_FLAGS) $< -o $@
+
+# Build step for general C sources
+$(BUILD_DIR)/%.o: %.c
+	$(CC) $(CC_FLAGS) $(DEBUG) -c $< -o $@
 
 .PHONY: clean
 clean:
-	rm *.o
-	rm ./build/*
-	rm *.gch
+	-rm ./build/*
 
-
+-include $(DEPS)
