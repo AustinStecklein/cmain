@@ -3,4 +3,4 @@ a.out
 ./build/*
 .cache
 *.o
-compile_commands.json
+.clangd
