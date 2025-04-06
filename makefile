@@ -70,4 +70,8 @@ $(BUILD_DIR)/%.o: %.c
 clean:
 	-rm ./build/*
 
+.PHONY: format
+format:
+	clang-format -i ./*.c
+
 -include $(DEPS)

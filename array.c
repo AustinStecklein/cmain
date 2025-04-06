@@ -20,7 +20,7 @@ void testDynamicArray(struct Arena *arrayArena) {
     ASSERT_TRUE(collection.alloc == 8, "check alloc'ed size");
 }
 
-void testStaticArray(struct Arena*) {
+void testStaticArray(struct Arena *) {
     FIXED_ARRAY(float) collection = NEW_FIXED_ARRAY();
     INIT_FIXED_ARRAY(collection, 1024);
     PUSH_FIXED_ARRAY(collection, 1.0f);
