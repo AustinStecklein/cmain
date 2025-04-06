@@ -23,6 +23,7 @@ STRING_DEPS += $(BUILD_DIR)/arena.o
 
 # build allocator for valgrind testing
 arena_mem: DEBUG += -DVALGRIND
+arena_mem: DEBUG += -DARENA_DEBUG
 arena: DEBUG += -DARENA_DEBUG
 array_mem: DEBUG += -DVALGRIND
 unittest_mem: DEBUG += -DVALGRIND
