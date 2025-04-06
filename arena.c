@@ -1,4 +1,5 @@
 #include "arena.h"
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,8 +10,8 @@ struct Arena {
     struct Arena *prevNode;
     struct Arena *nextNode;
     void *start;
-    uint32_t currentOffset;
-    uint32_t size;
+    size_t currentOffset;
+    size_t size;
 };
 
 struct Arena *createArena() {
@@ -42,8 +43,7 @@ struct Arena *createArena() {
     arena->nextNode = NULL;
     if (arena->start != NULL) {
         arena->size = size - (arena->start - pageStart);
-    }
-    else {
+    } else {
         DEBUG_PRINT("Fatal: Internal arena alloc failed\n");
     }
     return arena;
@@ -51,6 +51,12 @@ struct Arena *createArena() {
 
 // private function used to create additional nodes
 struct Arena *createArenaNode(struct Arena *prev) {
+    // if the arena pointers are null then it is at the end of the tree of nodes
+    if (prev == NULL) {
+        DEBUG_PRINT(
+            "Warning `createArenaNode` was called with a bad arena pointer\n");
+        return NULL;
+    }
     // This is the same as createArena yet it is building a node
     // on a linked list
     struct Arena *arena = createArena();
@@ -101,8 +107,7 @@ void burnItDown(struct Arena **arena) {
                          "arena memeo\n",
                          error_code) > 0) {
                 DEBUG_PRINT(log_message);
-            }
-            else {
+            } else {
                 // if asprintf fails still log a message
                 DEBUG_PRINT("Fatal error occured while attempting to free "
                             "arena memory\n");
@@ -116,8 +121,7 @@ void burnItDown(struct Arena **arena) {
                (*arena)->size + sizeof(struct Arena));
 #endif
 #endif
-    }
-    else {
+    } else {
         DEBUG_PRINT("Warning the start pointer passed to `burnItDown` was "
                     "already freed\n");
     }
@@ -139,14 +143,11 @@ void freeWholeArena(struct Arena **arena) {
 
 // free only some amount of bytes from the allocator
 // This function WILL assume that it is passed the most right most node
-int freeArena(struct Arena **arena, uint32_t size) {
+int freeArena(struct Arena **arena, size_t size) {
     if (arena == NULL || *arena == NULL) {
         DEBUG_PRINT(
             "Warning `freeArena` was called with a bad arena pointer\n");
         return -1;
-    }
-    if (size <= 0) {
-        return 0;
     }
 
     if ((*arena)->currentOffset < size) {
@@ -170,15 +171,14 @@ int freeArena(struct Arena **arena, uint32_t size) {
         }
         *arena = local_arena_pointer;
         return status;
-    }
-    else {
+    } else {
         // no need to update the arena pointer
         (*arena)->currentOffset -= size;
         return 0;
     }
 }
 
-void *mallocArena(struct Arena **arena, int32_t size) {
+void *mallocArena(struct Arena **arena, size_t size) {
     if (arena == NULL || *arena == NULL) {
         DEBUG_PRINT(
             "fatal `mallocArena` was called with a bad arena pointer\n");
@@ -227,7 +227,7 @@ void *mallocArena(struct Arena **arena, int32_t size) {
 }
 
 // the same as mallocArena but it will call memset 0 on the memory
-void *zmallocArena(struct Arena **arena, uint32_t size) {
+void *zmallocArena(struct Arena **arena, size_t size) {
     void *memoryLocation = mallocArena(arena, size);
     if (memoryLocation != NULL) {
         memset(memoryLocation, 0, size);
@@ -243,7 +243,7 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
     // this needs to check if the pointer is within this range and
     // if not then go to the prev node. Check going until the node is found
     // if it is not found then return -1
-    if (arena == NULL || *arena == NULL) {
+    if (arena == NULL || *arena == NULL || restorePoint == NULL) {
         DEBUG_PRINT(
             "Warning `restoreSratchPad` was called with a bad arena pointer\n");
         return -1;
@@ -254,8 +254,7 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
         // The restore point is within this node
         (*arena)->currentOffset = restorePoint - (*arena)->start;
         return 0;
-    }
-    else {
+    } else {
         if ((*arena)->prevNode == NULL) {
             DEBUG_PRINT(
                 "Warning `restoreStrachPad` was unable to find the node that "
@@ -283,7 +282,7 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
 //
 #ifdef ARENA_DEBUG
 #include "unittest.h"
-void testCreateArena(struct Arena*) {
+void testCreateArena(struct Arena *) {
     // test the creation of the arena
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
@@ -298,7 +297,7 @@ void testCreateArena(struct Arena*) {
     ASSERT_TRUE(arena == NULL, "check cleanup");
 }
 
-void testAllocMemory(struct Arena*) {
+void testAllocMemory(struct Arena *) {
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
@@ -366,7 +365,7 @@ void testAllocMemory(struct Arena*) {
     burnItDown(&arena);
 }
 
-void testZAllocMemory(struct Arena*) {
+void testZAllocMemory(struct Arena *) {
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
@@ -387,7 +386,7 @@ void testZAllocMemory(struct Arena*) {
     burnItDown(&arena);
 }
 
-void testFreeArena(struct Arena*) {
+void testFreeArena(struct Arena *) {
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
@@ -442,7 +441,7 @@ void testFreeArena(struct Arena*) {
     burnItDown(&arena);
 }
 
-void testScratchPad(struct Arena*) {
+void testScratchPad(struct Arena *) {
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
@@ -487,7 +486,7 @@ void testScratchPad(struct Arena*) {
     burnItDown(&arena);
 }
 
-void testMemoryAlignment(struct Arena*) {
+void testMemoryAlignment(struct Arena *) {
     // show that memory will be auto aligned
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
@@ -515,6 +514,47 @@ void testMemoryAlignment(struct Arena*) {
     burnItDown(&arena);
 }
 
+void testArenaFaults(struct Arena *) {
+    DEBUG_PRINT(
+        "Info `testArenaFaults` will trigger many warning and fault prints\n");
+    uint32_t size = getpagesize() - sizeof(struct Arena);
+
+    struct Arena *arena_a = createArenaNode(NULL);
+    ASSERT_TRUE(arena_a == NULL, "Check safe null returns");
+
+    // cannot assert anything for these but the fact that
+    // the program did not seg fault is good enough
+    struct Arena *arena_b = NULL;
+    burnItDown(NULL);
+    burnItDown(&arena_b);
+    freeWholeArena(NULL);
+    freeWholeArena(&arena_b);
+
+    struct Arena *arena_c = createArena();
+    int a = freeArena(NULL, 1);
+    ASSERT_TRUE(a == -1, "Check safe null returns");
+    int b = freeArena(&arena_b, 1);
+    ASSERT_TRUE(b == -1, "Check safe null returns");
+    int c = freeArena(&arena_c, 100);
+    ASSERT_TRUE(c == -1, "Check freeing to much memory");
+
+    void *pa = mallocArena(NULL, 1);
+    ASSERT_TRUE(pa == NULL, "Check safe null returns");
+    void *pb = mallocArena(&arena_b, 1);
+    ASSERT_TRUE(pb == NULL, "Check safe null returns");
+    void *pc = mallocArena(&arena_c, size + 50);
+    ASSERT_TRUE(pc == NULL, "Check too large of a malloc");
+
+    void *stored = startScratchPad(arena_c);
+    int d = restoreSratchPad(NULL, stored);
+    ASSERT_TRUE(d == -1, "Check safe null returns");
+    int e = restoreSratchPad(&arena_b, stored);
+    ASSERT_TRUE(e == -1, "Check safe null returns");
+    int f = restoreSratchPad(&arena_c, stored - 1);
+    ASSERT_TRUE(f == -1, "Check bad stored pointer");
+    burnItDown(&arena_c);
+}
+
 int main() {
     struct Arena *memory = createArena();
     setUp(memory);
@@ -524,6 +564,7 @@ int main() {
     ADD_TEST(testFreeArena);
     ADD_TEST(testScratchPad);
     ADD_TEST(testMemoryAlignment);
+    ADD_TEST(testArenaFaults);
     return runTest();
 }
 #endif

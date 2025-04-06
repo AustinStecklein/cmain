@@ -1,4 +1,6 @@
+#include <stddef.h>
 #include <stdint.h>
+#include <unistd.h>
 
 // in the future this should be going to stderr instead of stdout
 #ifdef ARENA_DEBUG
@@ -33,11 +35,11 @@ void burnItDown(struct Arena **arena);
 
 // frees the memory but doesn't destroy the memory
 void freeWholeArena(struct Arena **arena);
-int freeArena(struct Arena **arena, uint32_t size);
+int freeArena(struct Arena **arena, size_t size);
 
 // memory allocs on the arena
-void *mallocArena(struct Arena **arena, int32_t size);
-void *zmallocArena(struct Arena **arena, uint32_t size);
+void *mallocArena(struct Arena **arena, size_t size);
+void *zmallocArena(struct Arena **arena, size_t size);
 
 // scratch pad methods
 void *startScratchPad(struct Arena *arena);
