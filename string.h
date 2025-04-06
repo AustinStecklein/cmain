@@ -1,5 +1,5 @@
 #include "array.h"
-#include <string.h> // for memcmp
+#include <string.h> // for memcpy
 
 typedef FIXED_ARRAY(char) FixedString;
 

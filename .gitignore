@@ -1,4 +1,6 @@
 a.out
 *.gch
 ./build/*
+.cache
 *.o
+compile_commands.json

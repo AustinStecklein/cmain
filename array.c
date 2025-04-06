@@ -1,6 +1,5 @@
 #include "array.h"
 #include "unittest.h"
-#include <stdio.h>
 
 void testDynamicArray(struct Arena *arrayArena) {
     ARRAY(int) collection = NEW_ARRAY();

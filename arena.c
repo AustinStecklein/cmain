@@ -116,7 +116,6 @@ void burnItDown(struct Arena **arena) {
                (*arena)->size + sizeof(struct Arena));
 #endif
 #endif
-
     }
     else {
         DEBUG_PRINT("Warning the start pointer passed to `burnItDown` was "
@@ -219,6 +218,7 @@ void *mallocArena(struct Arena **arena, int32_t size) {
     // one allocation having to be continuous.
     struct Arena *newArena = createArenaNode(*arena);
     if (newArena == NULL) {
+        DEBUG_PRINT("fatal `mallocArena` was unable to create another node\n");
         return NULL;
     }
 
