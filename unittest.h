@@ -47,7 +47,7 @@ void setUp(struct Arena *currentAllocator) {
 }
 
 int runTest() {
-    if (!ARRAY_INITIALIZED(testCollection)) {
+    if (!ARRAY_INITIALIZED(testCollection) || allocator == NULL) {
         printf("The unit test file must call 'setUp' before calling 'runTest'\n");
         return -1;
     }
