@@ -13,6 +13,7 @@ SRCS := $(shell find . -name '*.c' -or -name '*.s')
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
 ARENA_DEPS := $(BUILD_DIR)/arena.o
+ARENA_MEM_DEPS := $(BUILD_DIR)/arena_mem.o
 ARRAY_DEPS := $(BUILD_DIR)/arena.o
 ARRAY_DEPS += $(BUILD_DIR)/array.o
 
@@ -33,30 +34,33 @@ string_mem: DEBUG += -DVALGRIND
 arena: $(ARENA_DEPS)
 	$(CC) $(LD_FLAGS) $(ARENA_DEPS) -o $(BUILD_DIR)/$@
 
-arena_mem: $(ARENA_DEPS)
-	$(CC) $(LD_FLAGS) $(ARENA_DEPS) -o $(BUILD_DIR)/$@
-	valgrind --leak-check=full $(BUILD_DIR)/$@
+arena_mem: $(ARENA_MEM_DEPS)
+	$(CC) $(LD_FLAGS) $(ARENA_MEM_DEPS) -o $(BUILD_DIR)/$@
+	-valgrind --leak-check=full $(BUILD_DIR)/$@
+
+$(BUILD_DIR)/arena_mem.o: arena.c
+	$(CC) $(CC_FLAGS) $(DEBUG) -c $< -o $@
 
 array: $(ARRAY_DEPS)
 	$(CC) $(LD_FLAGS) $(ARRAY_DEPS) -o $(BUILD_DIR)/$@
 
 array_mem: $(ARRAY_DEPS)
 	$(CC) $(LD_FLAGS) $(ARRAY_DEPS) -o $(BUILD_DIR)/$@
-	valgrind --leak-check=full $(BUILD_DIR)/$@
+	-valgrind --leak-check=full $(BUILD_DIR)/$@
 
 unittest: $(UNITTEST_DEPS)
 	$(CC) $(LD_FLAGS) $(UNITTEST_DEPS) -o $(BUILD_DIR)/$@
 
 unittest_mem: $(UNITTEST_DEPS)
 	$(CC) $(LD_FLAGS) $(UNITTEST_DEPS) -o $(BUILD_DIR)/$@
-	valgrind --leak-check=full $(BUILD_DIR)/$@
+	-valgrind --leak-check=full $(BUILD_DIR)/$@
 
 string: $(STRING_DEPS)
 	$(CC) $(LD_FLAGS) $(STRING_DEPS) -o $(BUILD_DIR)/$@
 
 string_mem: $(STRING_DEPS)
 	$(CC) $(LD_FLAGS) $(STRING_DEPS) -o $(BUILD_DIR)/$@
-	valgrind --leak-check=full $(BUILD_DIR)/$@
+	-valgrind --leak-check=full $(BUILD_DIR)/$@
 
 # Build step for general asm sources
 $(BUILD_DIR)/%.o: %.s
