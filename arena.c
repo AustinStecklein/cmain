@@ -1,11 +1,11 @@
 #include "arena.h"
+#include "debug.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h> // mmap
 #include <unistd.h>   // getpagesize
-#include "debug.h"
 
 struct Arena {
     struct Arena *prevNode;
@@ -61,7 +61,8 @@ struct Arena *createArenaNode(struct Arena *prev) {
     // on a linked list
     struct Arena *arena = createArena();
     if (arena == NULL) {
-        DEBUG_ERROR("createArenaNode was unable to allocate another node to the arena");
+        DEBUG_ERROR(
+            "createArenaNode was unable to allocate another node to the arena");
         return NULL;
     }
     prev->nextNode = arena;
@@ -107,7 +108,8 @@ void burnItDown(struct Arena **arena) {
                 DEBUG_ERROR(log_message);
             } else {
                 // if asprintf fails still log a message
-                DEBUG_ERROR("Fatal error occured while attempting to free arena memory");
+                DEBUG_ERROR("Fatal error occured while attempting to free "
+                            "arena memory");
             }
         }
 #else
@@ -119,7 +121,8 @@ void burnItDown(struct Arena **arena) {
 #endif
 #endif
     } else {
-        DEBUG_ERROR("The start pointer passed to `burnItDown` was already freed");
+        DEBUG_ERROR(
+            "The start pointer passed to `burnItDown` was already freed");
     }
     *arena = NULL;
 }
@@ -149,7 +152,8 @@ int freeArena(struct Arena **arena, size_t size) {
         // if the prev node is null and there is not enough size to continue to
         // free memory then the free size is larger than expected.
         if ((*arena)->prevNode == NULL) {
-            DEBUG_ERROR("`freeArena` is not large enough to free that many bytes");
+            DEBUG_ERROR(
+                "`freeArena` is not large enough to free that many bytes");
             return -1;
         }
         // only start to "free" the arena if every node has agreed that the free
@@ -178,7 +182,8 @@ void *mallocArena(struct Arena **arena, size_t size) {
         return NULL;
     }
     if (size > (*arena)->size) {
-        DEBUG_ERROR("`mallocArena` was called with a size that is larger than one arena node");
+        DEBUG_ERROR("`mallocArena` was called with a size that is larger than "
+                    "one arena node");
         return NULL;
     }
     // get the alignment offset
@@ -247,7 +252,8 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
         return 0;
     } else {
         if ((*arena)->prevNode == NULL) {
-            DEBUG_ERROR("`restoreStrachPad` was unable to find the node that contains the restorePoint");
+            DEBUG_ERROR("`restoreStrachPad` was unable to find the node that "
+                        "contains the restorePoint");
             return -1;
         }
         struct Arena *localArenaPointer = *arena;
@@ -504,7 +510,8 @@ void testMemoryAlignment(struct Arena *) {
 }
 
 void testArenaFaults(struct Arena *) {
-    DEBUG_PRINT("`testArenaFaults` will trigger many Error prints. As long as there is not seg faults this is expected");
+    DEBUG_PRINT("`testArenaFaults` will trigger many Error prints. As long as "
+                "there is not seg faults this is expected");
     uint32_t size = getpagesize() - sizeof(struct Arena);
 
     struct Arena *arena_a = createArenaNode(NULL);

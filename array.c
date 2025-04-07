@@ -86,7 +86,7 @@ void testCopyPointer(struct Arena *arrayArena) {
     char collection_1[5] = {'a', 'k', 's', 'q', 'i'};
     ARRAY(char) collection_2 = NEW_ARRAY();
     INIT_ARRAY(collection_2, arrayArena);
-    COPY_POINTER(collection_1, 5 * sizeof(char), collection_2);
+    COPY_POINTER(collection_1, 5, collection_2);
     ASSERT_TRUE(collection_1[0] == collection_2.items[0],
                 "Check that both collections have the same values");
     ASSERT_TRUE(collection_1[1] == collection_2.items[1],
@@ -99,6 +99,31 @@ void testCopyPointer(struct Arena *arrayArena) {
                 "Check that both collections have the same values");
 }
 
+void testFaults(struct Arena *arrayArena) {
+    ARRAY(int) collection_1 = NEW_ARRAY();
+    INIT_ARRAY(collection_1, NULL);
+    ASSERT_FALSE(ARRAY_INITIALIZED(collection_1),
+                 "Check that collection is still not initialized");
+    // No aserts here but checking that the program does not seg fault
+    CLEAR_ARRAY(collection_1);
+    PUSH_ARRAY(collection_1, 5);
+
+    ARRAY(int) collection_2 = NEW_ARRAY();
+    COPY(collection_1, collection_2);
+    ASSERT_FALSE(ARRAY_INITIALIZED(collection_2),
+                 "Check that collection is still not initialized");
+
+    INIT_ARRAY(collection_1, arrayArena);
+    PUSH_ARRAY(collection_1, 5);
+    PUSH_ARRAY(collection_1, 7);
+    COPY(collection_1, collection_2);
+    ASSERT_FALSE(ARRAY_INITIALIZED(collection_2),
+                 "Check that collection is still not initialized");
+
+    char collection_4[5] = {'a', 'k', 's', 'q', 'i'};
+    COPY_POINTER(&collection_4, 5, collection_2);
+}
+
 int main() {
     struct Arena *memory = createArena();
     setUp(memory);
@@ -108,5 +133,6 @@ int main() {
     ADD_TEST(testCheckInitializedArray);
     ADD_TEST(testCopy);
     ADD_TEST(testCopyPointer);
+    ADD_TEST(testFaults);
     return runTest();
 }

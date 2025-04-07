@@ -131,10 +131,6 @@ static inline size_t nextArrayAllocSize(size_t currentlyAlloced) {
             DEBUG_ERROR("called COPY with a null array pointer");              \
             break;                                                             \
         }                                                                      \
-        if (sizeof(array_src).items != sizeof(array_dst).items) {              \
-            DEBUG_PRINT("called COPY with arrys of two different sizes");      \
-            break;                                                             \
-        }                                                                      \
         if ((array_dst).alloc <= (array_src).size) {                           \
             (array_dst).items =                                                \
                 mallocArena(&(array_dst).arena,                                \
@@ -147,11 +143,13 @@ static inline size_t nextArrayAllocSize(size_t currentlyAlloced) {
 
 #define COPY_POINTER(src_pointer, src_size, array_dst)                         \
     do {                                                                       \
-        if (!ARRAY_INITIALIZED(array_dst)) {                                   \
-            DEBUG_ERROR("called COPY_POINTER with a null array pointer");      \
+        if (!ARRAY_INITIALIZED(array_dst) || src_pointer == NULL) {            \
+            DEBUG_ERROR("called COPY_POINTER with a null pointer");            \
+            break;                                                             \
         }                                                                      \
         if ((array_dst).alloc <= src_size) {                                   \
-            (array_dst).items = mallocArena(&(array_dst).arena, src_size);     \
+            (array_dst).items = mallocArena(                                   \
+                &(array_dst).arena, src_size * sizeof((array_dst).items));     \
         }                                                                      \
         (array_dst).size = src_size;                                           \
         memcpy((array_dst).items, src_pointer, src_size);                      \
