@@ -2,14 +2,6 @@
 #include <stdint.h>
 #include <unistd.h>
 
-// in the future this should be going to stderr instead of stdout
-#ifdef ARENA_DEBUG
-#include <stdio.h>
-#define DEBUG_PRINT(message) (printf(message))
-#else
-#define DEBUG_PRINT(message)
-#endif
-
 #define DEFAULT_SIZE 1024
 /*
  * notes on other features

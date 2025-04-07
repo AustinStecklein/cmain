@@ -1,6 +1,6 @@
 .DELETE_ON_ERROR:
 CC = gcc
-CC_FLAGS = -Wall -MMD -MP
+CC_FLAGS = -Wall -MMD -MP -DDEBUG
 LD_FLAGS = -lm
 DEBUG = -ggdb3
 ASM = nasm
@@ -76,6 +76,6 @@ clean:
 
 .PHONY: format
 format:
-	clang-format -i ./*.c
+	clang-format -i ./*.c ./*.h
 
 -include $(DEPS)

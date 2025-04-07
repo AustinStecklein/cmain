@@ -1,5 +1,6 @@
 #pragma once
 #include "arena.h"
+#include "debug.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,8 +16,7 @@
         size_t alloc;                                                          \
     }
 // used to fill the array with empty references
-#define NEW_FIXED_ARRAY()                                                      \
-    { 0, 0, 0 }
+#define NEW_FIXED_ARRAY() {0, 0, 0}
 
 #define INIT_FIXED_ARRAY(array, array_size)                                    \
     do {                                                                       \
@@ -52,11 +52,15 @@
     }
 
 // used to fill the array with empty references
-#define NEW_ARRAY()                                                            \
-    { 0, 0, 0, 0 }
+#define NEW_ARRAY() {0, 0, 0, 0}
 // used to set up the array
 #define INIT_ARRAY(array, givenArena)                                          \
     do {                                                                       \
+        if (givenArena == NULL) {                                              \
+            DEBUG_ERROR("called INIT_ARRAY with either a null array or arena " \
+                        "pointer");                                            \
+            break;                                                             \
+        }                                                                      \
         (array).size = 0;                                                      \
         (array).items = NULL;                                                  \
         (array).alloc = 0;                                                     \
@@ -66,6 +70,10 @@
 // Set size to zero which will do a lazy clear
 #define CLEAR_ARRAY(array)                                                     \
     do {                                                                       \
+        if (!ARRAY_INITIALIZED(array)) {                                       \
+            DEBUG_ERROR("called CLEAR_ARRAY with an unintialized array");      \
+            break;                                                             \
+        }                                                                      \
         (array).size = 0;                                                      \
     } while (0)
 
@@ -82,8 +90,12 @@
 // get more memory from the arena
 #define PUSH_ARRAY(array, item)                                                \
     do {                                                                       \
+        if (!ARRAY_INITIALIZED(array)) {                                       \
+            DEBUG_ERROR("called PUSH_ARRAY with an unintialized array");       \
+            break;                                                             \
+        }                                                                      \
         if ((array).alloc == (array).size)                                     \
-            REALLOC_ARRAY(array);                                              \
+            REALLOC_ARRAY(array, nextArrayAllocSize((array).size));            \
         (array).items[(array).size] = item;                                    \
         (array).size++;                                                        \
     } while (0)
@@ -94,13 +106,16 @@
 // since this will be with an arena vector there is no way to free the memory.
 // This means that memory will be used until the arena is completely free. This
 // is why these arrays should be small.
-#define REALLOC_ARRAY(array)                                                   \
+#define REALLOC_ARRAY(array, size)                                             \
     do {                                                                       \
         (array).items = reallocArray((array).arena, (array).items,             \
                                      (array).alloc * sizeof(*(array).items),   \
-                                     nextArrayAllocSize((array).alloc) *       \
-                                         sizeof(*(array).items));              \
-        (array).alloc = nextArrayAllocSize((array).alloc);                     \
+                                     (size) * sizeof(*(array).items));         \
+        if ((array).items == NULL) {                                           \
+            DEBUG_ERROR("REALLOC_ARRAY failed to realloc the array");          \
+            break;                                                             \
+        }                                                                      \
+        (array).alloc = size;                                                  \
     } while (0)
 
 static inline size_t nextArrayAllocSize(size_t currentlyAlloced) {
@@ -110,9 +125,49 @@ static inline size_t nextArrayAllocSize(size_t currentlyAlloced) {
     return 1;
 }
 
+#define COPY(array_src, array_dst)                                             \
+    do {                                                                       \
+        if (!ARRAY_INITIALIZED(array_src) || !ARRAY_INITIALIZED(array_dst)) {  \
+            DEBUG_ERROR("called COPY with a null array pointer");              \
+            break;                                                             \
+        }                                                                      \
+        if (sizeof(array_src).items != sizeof(array_dst).items) {              \
+            DEBUG_PRINT("called COPY with arrys of two different sizes");      \
+            break;                                                             \
+        }                                                                      \
+        if ((array_dst).alloc <= (array_src).size) {                           \
+            (array_dst).items =                                                \
+                mallocArena(&(array_dst).arena,                                \
+                            (array_src).size * sizeof((array_dst).items));     \
+        }                                                                      \
+        (array_dst).size = (array_src).size;                                   \
+        memcpy((array_dst).items, (array_src).items,                           \
+               (array_src).size * sizeof((array_dst).items));                  \
+    } while (0)
+
+#define COPY_POINTER(src_pointer, src_size, array_dst)                         \
+    do {                                                                       \
+        if (!ARRAY_INITIALIZED(array_dst)) {                                   \
+            DEBUG_ERROR("called COPY_POINTER with a null array pointer");      \
+        }                                                                      \
+        if ((array_dst).alloc <= src_size) {                                   \
+            (array_dst).items = mallocArena(&(array_dst).arena, src_size);     \
+        }                                                                      \
+        (array_dst).size = src_size;                                           \
+        memcpy((array_dst).items, src_pointer, src_size);                      \
+    } while (0)
+
 static inline void *reallocArray(struct Arena *arena, void *oldPointer,
                                  size_t oldAlloc, size_t newAlloc) {
-    void *newPointer = zmallocArena(&arena, newAlloc);
+    if (arena == NULL) {
+        DEBUG_ERROR("called reallocArray with a null arena pointer");
+        return NULL;
+    }
+    if (oldAlloc != 0 && oldPointer == NULL) {
+        DEBUG_ERROR("called reallocArray with a null array pointer");
+        return NULL;
+    }
+    void *newPointer = mallocArena(&arena, newAlloc);
     memcpy(newPointer, oldPointer, oldAlloc);
     return newPointer;
 }

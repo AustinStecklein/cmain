@@ -55,6 +55,50 @@ void testCheckInitializedArray(struct Arena *arrayArena) {
                 "Check that array is showing as initialized");
 }
 
+void testCopy(struct Arena *arrayArena) {
+    ARRAY(int) collection_1 = NEW_ARRAY();
+    INIT_ARRAY(collection_1, arrayArena);
+    PUSH_ARRAY(collection_1, 5);
+    PUSH_ARRAY(collection_1, 7);
+    PUSH_ARRAY(collection_1, 9);
+    PUSH_ARRAY(collection_1, 1);
+    PUSH_ARRAY(collection_1, 2);
+    ASSERT_TRUE(collection_1.size == 5,
+                "Check that the initial size is expected");
+    ARRAY(int) collection_2 = NEW_ARRAY();
+    INIT_ARRAY(collection_2, arrayArena);
+    COPY(collection_1, collection_2);
+    ASSERT_TRUE(collection_1.size == collection_2.size,
+                "Check that both collections are the same size now");
+    ASSERT_TRUE(collection_1.items[0] == collection_2.items[0],
+                "Check that both collections have the same values");
+    ASSERT_TRUE(collection_1.items[1] == collection_2.items[1],
+                "Check that both collections have the same values");
+    ASSERT_TRUE(collection_1.items[2] == collection_2.items[2],
+                "Check that both collections have the same values");
+    ASSERT_TRUE(collection_1.items[3] == collection_2.items[3],
+                "Check that both collections have the same values");
+    ASSERT_TRUE(collection_1.items[4] == collection_2.items[4],
+                "Check that both collections have the same values");
+}
+
+void testCopyPointer(struct Arena *arrayArena) {
+    char collection_1[5] = {'a', 'k', 's', 'q', 'i'};
+    ARRAY(char) collection_2 = NEW_ARRAY();
+    INIT_ARRAY(collection_2, arrayArena);
+    COPY_POINTER(collection_1, 5 * sizeof(char), collection_2);
+    ASSERT_TRUE(collection_1[0] == collection_2.items[0],
+                "Check that both collections have the same values");
+    ASSERT_TRUE(collection_1[1] == collection_2.items[1],
+                "Check that both collections have the same values");
+    ASSERT_TRUE(collection_1[2] == collection_2.items[2],
+                "Check that both collections have the same values");
+    ASSERT_TRUE(collection_1[3] == collection_2.items[3],
+                "Check that both collections have the same values");
+    ASSERT_TRUE(collection_1[4] == collection_2.items[4],
+                "Check that both collections have the same values");
+}
+
 int main() {
     struct Arena *memory = createArena();
     setUp(memory);
@@ -62,5 +106,7 @@ int main() {
     ADD_TEST(testStaticArray);
     ADD_TEST(testClearArray);
     ADD_TEST(testCheckInitializedArray);
+    ADD_TEST(testCopy);
+    ADD_TEST(testCopyPointer);
     return runTest();
 }

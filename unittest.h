@@ -48,21 +48,22 @@ void setUp(struct Arena *currentAllocator) {
 
 int runTest() {
     if (!ARRAY_INITIALIZED(testCollection) || allocator == NULL) {
-        printf("The unit test file must call 'setUp' before calling 'runTest'\n");
+        printf(
+            "The unit test file must call 'setUp' before calling 'runTest'\n");
         return -1;
     }
     int passedTestCount = 0;
     // run through all of the tests and then check if any asserts are fired
     // during the test
     for (int i = 0; i < testCollection.size; i++) {
-        void * testStartingPoint = startScratchPad(allocator);
+        void *testStartingPoint = startScratchPad(allocator);
         // start with clearing assert collection
         INIT_ARRAY(assertCollection, allocator);
         // the assert collection will be filled by the user defined test
         // function through the ASSERT_* macros
         char allTestsPassed = 1;
-        printf("%s: ", testCollection.items[i].functionName);
         (testCollection.items[i].function)(allocator);
+        printf("%s: ", testCollection.items[i].functionName);
         for (int j = 0; j < assertCollection.size; j++) {
             if (!assertCollection.items[j].passed)
                 allTestsPassed = 0;
@@ -70,8 +71,7 @@ int runTest() {
         if (allTestsPassed) {
             printf("\e[1;32m PASSED\e[0m\n");
             passedTestCount++;
-        }
-        else {
+        } else {
             // only going to reloop if there has been a single failure
             printf("\e[1;31m FAILED\e[0m\n");
             for (int j = 0; j < assertCollection.size; j++) {
@@ -88,6 +88,6 @@ int runTest() {
     }
     printf("%d test(s) passed out of %d\n", passedTestCount,
            (int)testCollection.size);
-	burnItDown(&testCollection.arena);
+    burnItDown(&testCollection.arena);
     return passedTestCount == (int)testCollection.size;
 }

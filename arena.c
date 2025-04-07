@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sys/mman.h> // mmap
 #include <unistd.h>   // getpagesize
+#include "debug.h"
 
 struct Arena {
     struct Arena *prevNode;
@@ -33,7 +34,7 @@ struct Arena *createArena() {
 
     struct Arena *arena = pageStart;
     if (arena == NULL) {
-        DEBUG_PRINT("Fatal: Initial arena alloc failed\n");
+        DEBUG_ERROR("Initial arena alloc failed");
         return NULL;
     }
     arena->start = pageStart + sizeof(struct Arena);
@@ -44,7 +45,7 @@ struct Arena *createArena() {
     if (arena->start != NULL) {
         arena->size = size - (arena->start - pageStart);
     } else {
-        DEBUG_PRINT("Fatal: Internal arena alloc failed\n");
+        DEBUG_ERROR("Internal arena alloc failed");
     }
     return arena;
 }
@@ -53,17 +54,14 @@ struct Arena *createArena() {
 struct Arena *createArenaNode(struct Arena *prev) {
     // if the arena pointers are null then it is at the end of the tree of nodes
     if (prev == NULL) {
-        DEBUG_PRINT(
-            "Warning `createArenaNode` was called with a bad arena pointer\n");
+        DEBUG_ERROR("`createArenaNode` was called with a bad arena pointer");
         return NULL;
     }
     // This is the same as createArena yet it is building a node
     // on a linked list
     struct Arena *arena = createArena();
     if (arena == NULL) {
-        DEBUG_PRINT(
-            "Fatal: createArenaNode was unable to allocate another node to "
-            "the arena\n");
+        DEBUG_ERROR("createArenaNode was unable to allocate another node to the arena");
         return NULL;
     }
     prev->nextNode = arena;
@@ -104,13 +102,12 @@ void burnItDown(struct Arena **arena) {
             char *log_message;
             if (asprintf(&log_message,
                          "Fatal error %d occured while attempting to free "
-                         "arena memeo\n",
+                         "arena memory\n",
                          error_code) > 0) {
-                DEBUG_PRINT(log_message);
+                DEBUG_ERROR(log_message);
             } else {
                 // if asprintf fails still log a message
-                DEBUG_PRINT("Fatal error occured while attempting to free "
-                            "arena memory\n");
+                DEBUG_ERROR("Fatal error occured while attempting to free arena memory");
             }
         }
 #else
@@ -122,8 +119,7 @@ void burnItDown(struct Arena **arena) {
 #endif
 #endif
     } else {
-        DEBUG_PRINT("Warning the start pointer passed to `burnItDown` was "
-                    "already freed\n");
+        DEBUG_ERROR("The start pointer passed to `burnItDown` was already freed");
     }
     *arena = NULL;
 }
@@ -145,8 +141,7 @@ void freeWholeArena(struct Arena **arena) {
 // This function WILL assume that it is passed the most right most node
 int freeArena(struct Arena **arena, size_t size) {
     if (arena == NULL || *arena == NULL) {
-        DEBUG_PRINT(
-            "Warning `freeArena` was called with a bad arena pointer\n");
+        DEBUG_ERROR("`freeArena` was called with a bad arena pointer");
         return -1;
     }
 
@@ -154,8 +149,7 @@ int freeArena(struct Arena **arena, size_t size) {
         // if the prev node is null and there is not enough size to continue to
         // free memory then the free size is larger than expected.
         if ((*arena)->prevNode == NULL) {
-            DEBUG_PRINT("Warning `freeArena` is not large enough to free that "
-                        "many bytes\n");
+            DEBUG_ERROR("`freeArena` is not large enough to free that many bytes");
             return -1;
         }
         // only start to "free" the arena if every node has agreed that the free
@@ -180,13 +174,11 @@ int freeArena(struct Arena **arena, size_t size) {
 
 void *mallocArena(struct Arena **arena, size_t size) {
     if (arena == NULL || *arena == NULL) {
-        DEBUG_PRINT(
-            "fatal `mallocArena` was called with a bad arena pointer\n");
+        DEBUG_ERROR("`mallocArena` was called with a bad arena pointer");
         return NULL;
     }
     if (size > (*arena)->size) {
-        DEBUG_PRINT("fatal `mallocArena` was called with a size that is larger "
-                    "than one arena node\n");
+        DEBUG_ERROR("`mallocArena` was called with a size that is larger than one arena node");
         return NULL;
     }
     // get the alignment offset
@@ -218,7 +210,7 @@ void *mallocArena(struct Arena **arena, size_t size) {
     // one allocation having to be continuous.
     struct Arena *newArena = createArenaNode(*arena);
     if (newArena == NULL) {
-        DEBUG_PRINT("fatal `mallocArena` was unable to create another node\n");
+        DEBUG_ERROR("`mallocArena` was unable to create another node");
         return NULL;
     }
 
@@ -244,8 +236,7 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
     // if not then go to the prev node. Check going until the node is found
     // if it is not found then return -1
     if (arena == NULL || *arena == NULL || restorePoint == NULL) {
-        DEBUG_PRINT(
-            "Warning `restoreSratchPad` was called with a bad arena pointer\n");
+        DEBUG_ERROR("`restoreSratchPad` was called with a bad arena pointer");
         return -1;
     }
 
@@ -256,9 +247,7 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
         return 0;
     } else {
         if ((*arena)->prevNode == NULL) {
-            DEBUG_PRINT(
-                "Warning `restoreStrachPad` was unable to find the node that "
-                "contains the restorePoint\n");
+            DEBUG_ERROR("`restoreStrachPad` was unable to find the node that contains the restorePoint");
             return -1;
         }
         struct Arena *localArenaPointer = *arena;
@@ -515,8 +504,7 @@ void testMemoryAlignment(struct Arena *) {
 }
 
 void testArenaFaults(struct Arena *) {
-    DEBUG_PRINT(
-        "Info `testArenaFaults` will trigger many warning and fault prints\n");
+    DEBUG_PRINT("`testArenaFaults` will trigger many Error prints. As long as there is not seg faults this is expected");
     uint32_t size = getpagesize() - sizeof(struct Arena);
 
     struct Arena *arena_a = createArenaNode(NULL);
