@@ -182,7 +182,7 @@ void *mallocArena(struct Arena **arena, size_t size) {
         DEBUG_ERROR("`mallocArena` was called with a bad arena pointer");
         return NULL;
     }
-    if (size > (*arena)->size) {
+    if (size > ((*arena)->size - sizeof(struct Arena))) {
         DEBUG_ERROR("`mallocArena` was called with a size that is larger than "
                     "one arena node");
         return NULL;
@@ -540,6 +540,8 @@ void testArenaFaults(struct Arena *testArena) {
     ASSERT_TRUE(pb == NULL, "Check safe null returns");
     void *pc = mallocArena(&arena_c, size + 50);
     ASSERT_TRUE(pc == NULL, "Check too large of a malloc");
+    void *pd = mallocArena(&arena_c, size);
+    ASSERT_TRUE(pd == NULL, "Check too large of a malloc");
 
     void *stored = startScratchPad(arena_c);
     int d = restoreSratchPad(NULL, stored);
