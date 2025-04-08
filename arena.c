@@ -106,6 +106,7 @@ void burnItDown(struct Arena **arena) {
                          "arena memory\n",
                          error_code) > 0) {
                 DEBUG_ERROR(log_message);
+                free(log_message);
             } else {
                 // if asprintf fails still log a message
                 DEBUG_ERROR("Fatal error occured while attempting to free "
@@ -277,7 +278,7 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
 //
 #ifdef ARENA_DEBUG
 #include "unittest.h"
-void testCreateArena(struct Arena *) {
+void testCreateArena(struct Arena *testArena) {
     // test the creation of the arena
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
@@ -292,7 +293,7 @@ void testCreateArena(struct Arena *) {
     ASSERT_TRUE(arena == NULL, "check cleanup");
 }
 
-void testAllocMemory(struct Arena *) {
+void testAllocMemory(struct Arena *testArena) {
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
@@ -360,7 +361,7 @@ void testAllocMemory(struct Arena *) {
     burnItDown(&arena);
 }
 
-void testZAllocMemory(struct Arena *) {
+void testZAllocMemory(struct Arena *testArena) {
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
@@ -381,7 +382,7 @@ void testZAllocMemory(struct Arena *) {
     burnItDown(&arena);
 }
 
-void testFreeArena(struct Arena *) {
+void testFreeArena(struct Arena *testArena) {
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
@@ -436,7 +437,7 @@ void testFreeArena(struct Arena *) {
     burnItDown(&arena);
 }
 
-void testScratchPad(struct Arena *) {
+void testScratchPad(struct Arena *testArena) {
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
@@ -481,7 +482,7 @@ void testScratchPad(struct Arena *) {
     burnItDown(&arena);
 }
 
-void testMemoryAlignment(struct Arena *) {
+void testMemoryAlignment(struct Arena *testArena) {
     // show that memory will be auto aligned
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
@@ -509,7 +510,7 @@ void testMemoryAlignment(struct Arena *) {
     burnItDown(&arena);
 }
 
-void testArenaFaults(struct Arena *) {
+void testArenaFaults(struct Arena *testArena) {
     DEBUG_PRINT("`testArenaFaults` will trigger many Error prints. As long as "
                 "there is not seg faults this is expected");
     uint32_t size = getpagesize() - sizeof(struct Arena);

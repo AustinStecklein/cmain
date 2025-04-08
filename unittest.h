@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 struct UnitTest {
-    void (*function)();
+    void (*function)(struct Arena *);
     char *functionName;
     char passed;
 };

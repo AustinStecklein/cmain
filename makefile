@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-CC = gcc
+CC = clang
 CC_FLAGS = -Wall -MMD -MP -DDEBUG
 LD_FLAGS = -lm
 DEBUG = -ggdb3
