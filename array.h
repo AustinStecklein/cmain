@@ -22,7 +22,10 @@
     do {                                                                       \
         (array).size = 0;                                                      \
         (array).items = malloc(sizeof(*(array).items) * (array_size));         \
-        (array).alloc = (array_size);                                          \
+        if ((array).items != NULL)                                             \
+            (array).alloc = (array_size);                                      \
+        else                                                                   \
+            DEBUG_ERROR("Unable to malloc space for the array\n");             \
     } while (0)
 
 #define FREE_FIXED_ARRAY(array)                                                \
@@ -96,6 +99,10 @@
         }                                                                      \
         if ((array).alloc == (array).size)                                     \
             REALLOC_ARRAY(array, nextArrayAllocSize((array).size));            \
+        if ((array).alloc == (array).size) {                                   \
+            DEBUG_ERROR("cannot add item to array");                           \
+            break;                                                             \
+        }                                                                      \
         (array).items[(array).size] = item;                                    \
         (array).size++;                                                        \
     } while (0)
@@ -136,9 +143,13 @@ static inline size_t nextArrayAllocSize(size_t currentlyAlloced) {
                 mallocArena(&(array_dst).arena,                                \
                             (array_src).size * sizeof((array_dst).items));     \
         }                                                                      \
-        (array_dst).size = (array_src).size;                                   \
-        memcpy((array_dst).items, (array_src).items,                           \
-               (array_src).size * sizeof((array_dst).items));                  \
+        if ((array_dst).items != NULL) {                                       \
+            (array_dst).size = (array_src).size;                               \
+            memcpy((array_dst).items, (array_src).items,                       \
+                   (array_src).size * sizeof((array_dst).items));              \
+        } else {                                                               \
+            DEBUG_ERROR("array_dst is a null pointer\n");                      \
+        }                                                                      \
     } while (0)
 
 #define COPY_POINTER(src_pointer, src_size, array_dst)                         \
@@ -151,8 +162,12 @@ static inline size_t nextArrayAllocSize(size_t currentlyAlloced) {
             (array_dst).items = mallocArena(                                   \
                 &(array_dst).arena, src_size * sizeof((array_dst).items));     \
         }                                                                      \
-        (array_dst).size = src_size;                                           \
-        memcpy((array_dst).items, src_pointer, src_size);                      \
+        if ((array_dst).items != NULL) {                                       \
+            (array_dst).size = src_size;                                       \
+            memcpy((array_dst).items, src_pointer, src_size);                  \
+        } else {                                                               \
+            DEBUG_ERROR("array_dst is a null pointer\n");                      \
+        }                                                                      \
     } while (0)
 
 static inline void *reallocArray(struct Arena *arena, void *oldPointer,
@@ -166,6 +181,10 @@ static inline void *reallocArray(struct Arena *arena, void *oldPointer,
         return NULL;
     }
     void *newPointer = mallocArena(&arena, newAlloc);
+    if (newPointer == NULL) {
+        DEBUG_ERROR("mallocArena failed to allocate memory\n");
+        return NULL;
+    }
     memcpy(newPointer, oldPointer, oldAlloc);
     return newPointer;
 }
