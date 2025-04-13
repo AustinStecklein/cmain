@@ -100,13 +100,14 @@ void burnItDown(struct Arena **arena) {
         // this will allocate memory from the heap instead of from the arena so
         // this is hidden behind the debug flag
         if (error_code != 0) {
-            char *log_message;
+            char *log_message = NULL;
             if (asprintf(&log_message,
                          "Fatal error %d occured while attempting to free "
                          "arena memory\n",
                          error_code) > 0) {
                 DEBUG_ERROR(log_message);
-                free(log_message);
+                if (log_message != NULL)
+                    free(log_message);
             } else {
                 // if asprintf fails still log a message
                 DEBUG_ERROR("Fatal error occured while attempting to free "
@@ -234,6 +235,10 @@ void *zmallocArena(struct Arena **arena, size_t size) {
 }
 
 void *startScratchPad(struct Arena *arena) {
+    if (arena == NULL) {
+        DEBUG_ERROR("`startScratchPad` was called with a bad arena pointer");
+        return NULL;
+    }
     return arena->start + arena->currentOffset;
 }
 
@@ -265,6 +270,7 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
             return status;
         }
         // reset this back to what it was originally since there was an error
+        // if this has been reached
         *arena = localArenaPointer;
         return status;
     }
@@ -550,6 +556,7 @@ void testArenaFaults(struct Arena *testArena) {
     ASSERT_TRUE(e == -1, "Check safe null returns");
     int f = restoreSratchPad(&arena_c, stored - 1);
     ASSERT_TRUE(f == -1, "Check bad stored pointer");
+
     burnItDown(&arena_c);
 }
 
