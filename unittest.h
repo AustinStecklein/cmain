@@ -2,6 +2,7 @@
 #include "arena.h"
 #include "array.h"
 #include <stdio.h>
+#include "debug.h"
 
 struct UnitTest {
     void (*function)(struct Arena *);
@@ -21,29 +22,48 @@ struct Arena *allocator = NULL;
 ARRAY(struct UnitTest) testCollection = NEW_ARRAY();
 ARRAY(struct Assert) assertCollection = NEW_ARRAY();
 
+int setupFailed = 0;
+
 // The macros available for testing
 #define ASSERT_TRUE(expression, testName)                                      \
     do {                                                                       \
+        int status = 0;\
         struct Assert newAssert_testName = {testName, (expression)};           \
-        PUSH_ARRAY(assertCollection, newAssert_testName);                      \
+        PUSH_ARRAY(assertCollection, newAssert_testName, status);                      \
+        if (status != OK) { \
+            DEBUG_ERROR("`ASSERT_TRUE` failed to add assertion");\
+            setupFailed = 1;\
+        }\
     } while (0)
 
 #define ASSERT_FALSE(expression, testName)                                     \
     do {                                                                       \
+        int status = 0;\
         struct Assert newAssert = {testName, !(expression)};                   \
-        PUSH_ARRAY(assertCollection, newAssert);                               \
+        PUSH_ARRAY(assertCollection, newAssert, status);                               \
+        if (status != OK){ \
+            DEBUG_ERROR("`ASSERT_FALSE` failed to add assertion");\
+            setupFailed = 1;\
+        }\
     } while (0)
 
 // setup functions
 #define ADD_TEST(function)                                                     \
     do {                                                                       \
+        int status = 0;\
         struct UnitTest newTest = {(function), #function, 0};                  \
-        PUSH_ARRAY(testCollection, newTest);                                   \
+        PUSH_ARRAY(testCollection, newTest, status);                                   \
+        if (status != OK){ \
+            DEBUG_ERROR("`ADD_TEST` failed to add assertion");\
+            setupFailed = 1;\
+        }\
     } while (0)
 
-void setUp(struct Arena *currentAllocator) {
+int setUp(struct Arena *currentAllocator) {
     allocator = currentAllocator;
-    INIT_ARRAY(testCollection, allocator);
+    int status = 0;
+    INIT_ARRAY(testCollection, allocator, status);
+    return status;
 }
 
 int runTest() {
@@ -57,8 +77,13 @@ int runTest() {
     // during the test
     for (int i = 0; i < testCollection.size; i++) {
         void *testStartingPoint = startScratchPad(allocator);
+        int status = 0;
         // start with clearing assert collection
-        INIT_ARRAY(assertCollection, allocator);
+        INIT_ARRAY(assertCollection, allocator, status);
+        if (status != OK) {
+            printf("\e[1;31m FAILED:\e[0m Unable to kick off the test");
+            break;
+        }
         // the assert collection will be filled by the user defined test
         // function through the ASSERT_* macros
         char allTestsPassed = 1;

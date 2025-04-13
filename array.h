@@ -6,6 +6,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+enum ArrayError {
+    OK = 0,
+    NULLPOINTER = 1,
+    UNINIARRAY = 2,
+    FAILEDALLOC = 3,
+};
+
 // fixed arrays that don't make sense to be allocated in an arena due to either
 // their lifetime or their size. This makes them super simple compared to the
 // dynamic array
@@ -18,7 +25,7 @@
 // used to fill the array with empty references
 #define NEW_FIXED_ARRAY() {0, 0, 0}
 
-#define INIT_FIXED_ARRAY(array, array_size)                                    \
+#define INIT_FIXED_ARRAY(array, array_size, status)                                    \
     do {                                                                       \
         (array).size = 0;                                                      \
         (array).items = malloc(sizeof(*(array).items) * (array_size));         \
@@ -26,6 +33,7 @@
             (array).alloc = (array_size);                                      \
         else                                                                   \
             DEBUG_ERROR("Unable to malloc space for the array\n");             \
+            (status) = FAILEDALLOC;\
     } while (0)
 
 #define FREE_FIXED_ARRAY(array)                                                \
@@ -57,27 +65,31 @@
 // used to fill the array with empty references
 #define NEW_ARRAY() {0, 0, 0, 0}
 // used to set up the array
-#define INIT_ARRAY(array, givenArena)                                          \
+#define INIT_ARRAY(array, givenArena, status)                                          \
     do {                                                                       \
         if (givenArena == NULL) {                                              \
             DEBUG_ERROR("called INIT_ARRAY with either a null array or arena " \
                         "pointer");                                            \
+            (status) = NULLPOINTER;\
             break;                                                             \
         }                                                                      \
         (array).size = 0;                                                      \
         (array).items = NULL;                                                  \
         (array).alloc = 0;                                                     \
         (array).arena = givenArena;                                            \
+        (status) = 0;\
     } while (0)
 
 // Set size to zero which will do a lazy clear
-#define CLEAR_ARRAY(array)                                                     \
+#define CLEAR_ARRAY(array, status)                                                     \
     do {                                                                       \
         if (!ARRAY_INITIALIZED(array)) {                                       \
             DEBUG_ERROR("called CLEAR_ARRAY with an unintialized array");      \
+            (status) = UNINIARRAY;\
             break;                                                             \
         }                                                                      \
         (array).size = 0;                                                      \
+        (status) = 0;\
     } while (0)
 
 // free the array. Since this uses an arena the array is not in charge of the
@@ -91,14 +103,15 @@
 
 // push an item to the array. If the size needs to increased attempt to
 // get more memory from the arena
-#define PUSH_ARRAY(array, item)                                                \
+#define PUSH_ARRAY(array, item, status)                                                \
     do {                                                                       \
         if (!ARRAY_INITIALIZED(array)) {                                       \
             DEBUG_ERROR("called PUSH_ARRAY with an unintialized array");       \
+            (status) = UNINIARRAY;\
             break;                                                             \
         }                                                                      \
         if ((array).alloc == (array).size)                                     \
-            REALLOC_ARRAY(array, nextArrayAllocSize((array).size));            \
+            REALLOC_ARRAY(array, nextArrayAllocSize((array).size), status);            \
         if ((array).alloc == (array).size) {                                   \
             DEBUG_ERROR("cannot add item to array");                           \
             break;                                                             \
@@ -113,13 +126,14 @@
 // since this will be with an arena vector there is no way to free the memory.
 // This means that memory will be used until the arena is completely free. This
 // is why these arrays should be small.
-#define REALLOC_ARRAY(array, size)                                             \
+#define REALLOC_ARRAY(array, size, status)                                             \
     do {                                                                       \
         (array).items = reallocArray((array).arena, (array).items,             \
                                      (array).alloc * sizeof(*(array).items),   \
                                      (size) * sizeof(*(array).items));         \
         if ((array).items == NULL) {                                           \
             DEBUG_ERROR("REALLOC_ARRAY failed to realloc the array");          \
+            (status) = FAILEDALLOC;\
             break;                                                             \
         }                                                                      \
         (array).alloc = size;                                                  \
@@ -132,10 +146,11 @@ static inline size_t nextArrayAllocSize(size_t currentlyAlloced) {
     return 1;
 }
 
-#define COPY(array_src, array_dst)                                             \
+#define COPY(array_src, array_dst, status)                                             \
     do {                                                                       \
         if (!ARRAY_INITIALIZED(array_src) || !ARRAY_INITIALIZED(array_dst)) {  \
             DEBUG_ERROR("called COPY with a null array pointer");              \
+            (status) = NULLPOINTER;\
             break;                                                             \
         }                                                                      \
         if ((array_dst).alloc <= (array_src).size) {                           \
@@ -149,13 +164,15 @@ static inline size_t nextArrayAllocSize(size_t currentlyAlloced) {
                    (array_src).size * sizeof((array_dst).items));              \
         } else {                                                               \
             DEBUG_ERROR("array_dst is a null pointer\n");                      \
+            (status) = FAILEDALLOC;\
         }                                                                      \
     } while (0)
 
-#define COPY_POINTER(src_pointer, src_size, array_dst)                         \
+#define COPY_POINTER(src_pointer, src_size, array_dst, status)                         \
     do {                                                                       \
         if (!ARRAY_INITIALIZED(array_dst) || src_pointer == NULL) {            \
             DEBUG_ERROR("called COPY_POINTER with a null pointer");            \
+            (status) = NULLPOINTER;\
             break;                                                             \
         }                                                                      \
         if ((array_dst).alloc <= src_size) {                                   \
@@ -167,6 +184,7 @@ static inline size_t nextArrayAllocSize(size_t currentlyAlloced) {
             memcpy((array_dst).items, src_pointer, src_size);                  \
         } else {                                                               \
             DEBUG_ERROR("array_dst is a null pointer\n");                      \
+            (status) = FAILEDALLOC;\
         }                                                                      \
     } while (0)
 

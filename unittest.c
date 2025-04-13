@@ -20,7 +20,12 @@ void thirdTest(struct Arena *arena) {
 
 int main() {
     struct Arena *memory = createArena();
-    setUp(memory);
+    int status = 0;
+    status = setUp(memory);
+    if (status != 0) {
+        printf("Failed to setup the test\n");
+        return status;
+    }
     ADD_TEST(firstTest);
     ADD_TEST(secondTest);
     ADD_TEST(thirdTest);

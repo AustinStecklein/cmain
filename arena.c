@@ -563,7 +563,12 @@ void testArenaFaults(struct Arena *testArena) {
 
 int main() {
     struct Arena *memory = createArena();
-    setUp(memory);
+    int status = 0;
+    status = setUp(memory);
+    if (status != 0) {
+        printf("Failed to setup the test\n");
+        return status;
+    }
     ADD_TEST(testCreateArena);
     ADD_TEST(testAllocMemory);
     ADD_TEST(testZAllocMemory);
