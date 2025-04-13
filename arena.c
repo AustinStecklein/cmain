@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/mman.h> // mmap
 #include <unistd.h>   // getpagesize
+#include <stdio.h>   // asprintf
 
 struct Arena {
     struct Arena *prevNode;
