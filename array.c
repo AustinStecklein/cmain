@@ -100,6 +100,8 @@ void testCopyPointer(struct Arena *arrayArena) {
 }
 
 void testFaults(struct Arena *arrayArena) {
+    DEBUG_PRINT("`testFaults` will trigger many Error prints. As long as "
+                "there is not seg faults this is expected");
     ARRAY(int) collection_1 = NEW_ARRAY();
     INIT_ARRAY(collection_1, NULL);
     ASSERT_FALSE(ARRAY_INITIALIZED(collection_1),
