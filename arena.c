@@ -7,6 +7,7 @@
 #include <sys/mman.h> // mmap
 #include <unistd.h>   // getpagesize
 #include <stdio.h>   // asprintf
+#include <math.h>
 
 struct Arena {
     struct Arena *prevNode;
@@ -16,20 +17,21 @@ struct Arena {
     size_t size;
 };
 
-struct Arena *createArena() {
-    // the arena will create a chunk that is the size of the current page size.
-    // This is not great as it means that 4096 is largest continuous memory
-    // aloud. This could be changed to take in a size but for now if something
-    // is that large just statically allocate it.
-    // The object itself will be stored at the start of the page. Then the rest
-    // of the page will be used for user data
-    uint32_t size = getpagesize();
+// The size passed in is a reference to the size of the object that will
+// get allocated. This allows for arena nodes to be larger than a page
+// size in the case that happens.
+struct Arena *createSizedArena(uint32_t size) {
+    uint32_t pageSize = getpagesize();
+    uint32_t allocableSpace = pageSize - sizeof(struct Arena);
+    // if the page size is zero here then we got more problems then allocating
+    // memory
+    uint32_t arenaSize = pageSize * (int)ceill(((float)size / (float)allocableSpace));
     // build the arena! "is that a freaking void pointer - mike"
 #ifdef VALGRIND
     // it is just easier to use the heap with valgrind
-    void *pageStart = malloc(size);
+    void *pageStart = malloc(arenaSize);
 #else
-    void *pageStart = mmap(NULL, size, PROT_READ | PROT_WRITE,
+    void *pageStart = mmap(NULL, arenaSize, PROT_READ | PROT_WRITE,
                            MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 #endif
 
@@ -44,15 +46,21 @@ struct Arena *createArena() {
     arena->prevNode = NULL;
     arena->nextNode = NULL;
     if (arena->start != NULL) {
-        arena->size = size - (arena->start - pageStart);
+        arena->size = arenaSize - (arena->start - pageStart);
     } else {
         DEBUG_ERROR("Internal arena alloc failed");
     }
     return arena;
 }
 
+struct Arena *createArena() {
+    // just pass in 1 since we don't really care about the size. We just want
+    // the arena to be at the default page size.
+    return createSizedArena(1);
+}
+
 // private function used to create additional nodes
-struct Arena *createArenaNode(struct Arena *prev) {
+struct Arena *createArenaNode(struct Arena *prev, int size) {
     // if the arena pointers are null then it is at the end of the tree of nodes
     if (prev == NULL) {
         DEBUG_ERROR("`createArenaNode` was called with a bad arena pointer");
@@ -60,7 +68,7 @@ struct Arena *createArenaNode(struct Arena *prev) {
     }
     // This is the same as createArena yet it is building a node
     // on a linked list
-    struct Arena *arena = createArena();
+    struct Arena *arena = createSizedArena(size);
     if (arena == NULL) {
         DEBUG_ERROR(
             "createArenaNode was unable to allocate another node to the arena");
@@ -184,11 +192,6 @@ void *mallocArena(struct Arena **arena, size_t size) {
         DEBUG_ERROR("`mallocArena` was called with a bad arena pointer");
         return NULL;
     }
-    if (size > ((*arena)->size - sizeof(struct Arena))) {
-        DEBUG_ERROR("`mallocArena` was called with a size that is larger than "
-                    "one arena node");
-        return NULL;
-    }
     // get the alignment offset
     uint64_t alignment = size;
     if (size > 8)
@@ -216,7 +219,7 @@ void *mallocArena(struct Arena **arena, size_t size) {
     // The arena is not able to allocate that much memory in this arena.
     // The current arena will not contain any of this data due to memory of
     // one allocation having to be continuous.
-    struct Arena *newArena = createArenaNode(*arena);
+    struct Arena *newArena = createArenaNode(*arena, size);
     if (newArena == NULL) {
         DEBUG_ERROR("`mallocArena` was unable to create another node");
         return NULL;
@@ -364,6 +367,13 @@ void testAllocMemory(struct Arena *testArena) {
                 "check the current offset");
     ASSERT_TRUE(arena->nextNode == NULL, "check next status");
     ASSERT_TRUE(arena->prevNode != NULL, "check prev status");
+
+    float *e = mallocArena(&arena, 2 * getpagesize());
+    uint32_t largeSize = (3 * getpagesize()) - sizeof(struct Arena);
+    ASSERT_TRUE(d != NULL, "check malloc'ed pointer status");
+    ASSERT_TRUE((uint64_t)e % sizeof(float) == 0,
+                "check returned memory is aligned");
+    ASSERT_TRUE(arena->size == largeSize, "check arena size");
 
     burnItDown(&arena);
 }
@@ -520,9 +530,7 @@ void testMemoryAlignment(struct Arena *testArena) {
 void testArenaFaults(struct Arena *testArena) {
     DEBUG_PRINT("`testArenaFaults` will trigger many Error prints. As long as "
                 "there is not seg faults this is expected");
-    uint32_t size = getpagesize() - sizeof(struct Arena);
-
-    struct Arena *arena_a = createArenaNode(NULL);
+    struct Arena *arena_a = createArenaNode(NULL, 0);
     ASSERT_TRUE(arena_a == NULL, "Check safe null returns");
 
     // cannot assert anything for these but the fact that
@@ -545,10 +553,6 @@ void testArenaFaults(struct Arena *testArena) {
     ASSERT_TRUE(pa == NULL, "Check safe null returns");
     void *pb = mallocArena(&arena_b, 1);
     ASSERT_TRUE(pb == NULL, "Check safe null returns");
-    void *pc = mallocArena(&arena_c, size + 50);
-    ASSERT_TRUE(pc == NULL, "Check too large of a malloc");
-    void *pd = mallocArena(&arena_c, size);
-    ASSERT_TRUE(pd == NULL, "Check too large of a malloc");
 
     void *stored = startScratchPad(arena_c);
     int d = restoreSratchPad(NULL, stored);
