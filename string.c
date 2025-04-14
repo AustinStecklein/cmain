@@ -2,7 +2,8 @@
 #include "unittest.h"
 
 void testStringChar(struct Arena *arena) {
-    struct StringReturn stringReturn = getStringFromChar("test string", 12, arena);
+    struct StringReturn stringReturn =
+        getStringFromChar("test string", 12, arena);
     if (stringReturn.status != 0) {
         ASSERT_TRUE(0, "`getStringFromChar` failed fatally");
         return;
@@ -11,8 +12,8 @@ void testStringChar(struct Arena *arena) {
     ASSERT_TRUE(!memcmp(getChar(&string), "test string", sizeof("test string")),
                 "Check the initialization of the fixed string from char");
 
-
-    struct StringReturn secondStringReturn = copyStringFromChar(getChar(&string), 12, arena);
+    struct StringReturn secondStringReturn =
+        copyStringFromChar(getChar(&string), 12, arena);
     if (secondStringReturn.status != 0) {
         ASSERT_TRUE(0, "`getStringFromChar` failed fatally");
         return;
@@ -30,7 +31,8 @@ void testStringChar(struct Arena *arena) {
 }
 
 void testString(struct Arena *arena) {
-    struct StringReturn stringReturn = getStringFromChar("test string", 12, arena);
+    struct StringReturn stringReturn =
+        getStringFromChar("test string", 12, arena);
     if (stringReturn.status != 0) {
         ASSERT_TRUE(0, "`getStringFromChar` failed fatally");
         return;

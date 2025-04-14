@@ -3,7 +3,6 @@
 
 typedef ARRAY(char) String;
 
-
 struct StringReturn {
     String string;
     int status;
@@ -20,7 +19,8 @@ char *getChar(String *string) {
 // this will create a string froma char *.
 // This means the char * must
 // have a lifetime as long as the string.
-struct StringReturn getStringFromChar(char *string, size_t size, struct Arena *arena) {
+struct StringReturn getStringFromChar(char *string, size_t size,
+                                      struct Arena *arena) {
     struct StringReturn returnValue = {{string, size, size, arena}, 0};
     if (string == NULL) {
         DEBUG_ERROR("NUll pointer has passed to `getStringFromChar`");
@@ -34,8 +34,8 @@ struct StringReturn getStringFromChar(char *string, size_t size, struct Arena *a
 // a char pointer. This means the char * must
 // have a lifetime as long as the string.
 struct StringReturn getStringFromString(String *string) {
-    struct StringReturn returnValue = {{string->items, string->size, string->size,
-                        string->arena}, 0};
+    struct StringReturn returnValue = {
+        {string->items, string->size, string->size, string->arena}, 0};
     if (string == NULL) {
         DEBUG_ERROR("NUll pointer has passed to `getStringFromString`");
         returnValue.status = 1;
@@ -45,7 +45,8 @@ struct StringReturn getStringFromString(String *string) {
 }
 
 // copy the contents of the string. This is using fixed array size.
-struct StringReturn copyStringFromChar(char *string, size_t size, struct Arena *arena) {
+struct StringReturn copyStringFromChar(char *string, size_t size,
+                                       struct Arena *arena) {
     struct StringReturn returnValue = {NEW_ARRAY(), 0};
     if (string == NULL) {
         DEBUG_ERROR("NUll pointer has passed to `copyStringFromChar`");

@@ -4,7 +4,7 @@
 void testDynamicArray(struct Arena *arrayArena) {
     ARRAY(int) collection = NEW_ARRAY();
     int status = 0;
-    INIT_ARRAY(collection, arrayArena , status);
+    INIT_ARRAY(collection, arrayArena, status);
     ASSERT_TRUE(status == OK, "status check");
     PUSH_ARRAY(collection, 5, status);
     ASSERT_TRUE(status == OK, "status check");

@@ -1,8 +1,8 @@
 #pragma once
 #include "arena.h"
 #include "array.h"
-#include <stdio.h>
 #include "debug.h"
+#include <stdio.h>
 
 struct UnitTest {
     void (*function)(struct Arena *);
@@ -27,36 +27,36 @@ int setupFailed = 0;
 // The macros available for testing
 #define ASSERT_TRUE(expression, testName)                                      \
     do {                                                                       \
-        int status = 0;\
+        int status = 0;                                                        \
         struct Assert newAssert_testName = {testName, (expression)};           \
-        PUSH_ARRAY(assertCollection, newAssert_testName, status);                      \
-        if (status != OK) { \
-            DEBUG_ERROR("`ASSERT_TRUE` failed to add assertion");\
-            setupFailed = 1;\
-        }\
+        PUSH_ARRAY(assertCollection, newAssert_testName, status);              \
+        if (status != OK) {                                                    \
+            DEBUG_ERROR("`ASSERT_TRUE` failed to add assertion");              \
+            setupFailed = 1;                                                   \
+        }                                                                      \
     } while (0)
 
 #define ASSERT_FALSE(expression, testName)                                     \
     do {                                                                       \
-        int status = 0;\
+        int status = 0;                                                        \
         struct Assert newAssert = {testName, !(expression)};                   \
-        PUSH_ARRAY(assertCollection, newAssert, status);                               \
-        if (status != OK){ \
-            DEBUG_ERROR("`ASSERT_FALSE` failed to add assertion");\
-            setupFailed = 1;\
-        }\
+        PUSH_ARRAY(assertCollection, newAssert, status);                       \
+        if (status != OK) {                                                    \
+            DEBUG_ERROR("`ASSERT_FALSE` failed to add assertion");             \
+            setupFailed = 1;                                                   \
+        }                                                                      \
     } while (0)
 
 // setup functions
 #define ADD_TEST(function)                                                     \
     do {                                                                       \
-        int status = 0;\
+        int status = 0;                                                        \
         struct UnitTest newTest = {(function), #function, 0};                  \
-        PUSH_ARRAY(testCollection, newTest, status);                                   \
-        if (status != OK){ \
-            DEBUG_ERROR("`ADD_TEST` failed to add assertion");\
-            setupFailed = 1;\
-        }\
+        PUSH_ARRAY(testCollection, newTest, status);                           \
+        if (status != OK) {                                                    \
+            DEBUG_ERROR("`ADD_TEST` failed to add assertion");                 \
+            setupFailed = 1;                                                   \
+        }                                                                      \
     } while (0)
 
 int setUp(struct Arena *currentAllocator) {
