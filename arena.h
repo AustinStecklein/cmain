@@ -1,21 +1,18 @@
+#ifndef ARENA_H
+#define ARENA_H
+
 #include <stddef.h>
 #include <stdint.h>
 #include <unistd.h>
 
-#define DEFAULT_SIZE 1024
-/*
- * notes on other features
- * look into what marcos make sense to create in the .h for easier use of the
- * improvements that could be made with this for other data structures
- * - have a list of free memory of a fixed size that can be used to "free"
- * memory in the middle of the stack
- * -- this might have to be just a data structure built off of the arena
- * - look into claiming virtual memory from the os that way the data structure
- * can always get contiguous memory. ball out
- */
+struct Arena {
+    struct Arena *prevNode;
+    struct Arena *nextNode;
+    void *start;
+    size_t currentOffset;
+    size_t size;
+};
 
-// base arena struct
-struct Arena;
 
 // arena creation
 // Since size is a uint32 the max total arena size is 2^32. If you need more
@@ -36,3 +33,4 @@ void *zmallocArena(struct Arena **arena, size_t size);
 // scratch pad methods
 void *startScratchPad(struct Arena *arena);
 int restoreSratchPad(struct Arena **arena, void *restorePoint);
+#endif

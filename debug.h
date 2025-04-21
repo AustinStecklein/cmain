@@ -1,4 +1,6 @@
-#pragma once
+#ifndef DEBUG_H
+#define DEBUG_H
+
 // in the future this should be going to stderr instead of stdout
 #ifdef DEBUG
 #include <stdio.h>
@@ -11,4 +13,6 @@
 #else
 #define DEBUG_PRINT(message)
 #define DEBUG_ERROR(message)
+#endif
+
 #endif

@@ -1,82 +1,82 @@
 #include "string.h"
-#include "unittest.h"
 
-void testStringChar(struct Arena *arena) {
-    struct StringReturn stringReturn =
-        getStringFromChar("test string", 12, arena);
-    if (stringReturn.status != 0) {
-        ASSERT_TRUE(0, "`getStringFromChar` failed fatally");
-        return;
+char *getChar(String *string) {
+    if (string == NULL) {
+        DEBUG_ERROR("NUll pointer has passed to `getChar`");
+        return NULL;
     }
-    String string = stringReturn.string;
-    ASSERT_TRUE(!memcmp(getChar(&string), "test string", sizeof("test string")),
-                "Check the initialization of the fixed string from char");
-
-    struct StringReturn secondStringReturn =
-        copyStringFromChar(getChar(&string), 12, arena);
-    if (secondStringReturn.status != 0) {
-        ASSERT_TRUE(0, "`getStringFromChar` failed fatally");
-        return;
-    }
-    String secondString = secondStringReturn.string;
-    ASSERT_TRUE(
-        !memcmp(getChar(&secondString), "test string", sizeof("test string")),
-        "Check the copy the fixed string from char");
-    secondString.items[0] = 'T';
-    ASSERT_FALSE(
-        !memcmp(getChar(&secondString), "test string", sizeof("Test string")),
-        "Check the copy changes");
-    ASSERT_TRUE(!memcmp(getChar(&string), "test string", sizeof("Test string")),
-                "Check the original doesn't change");
+    return (string->items);
 }
 
-void testString(struct Arena *arena) {
-    struct StringReturn stringReturn =
-        getStringFromChar("test string", 12, arena);
-    if (stringReturn.status != 0) {
-        ASSERT_TRUE(0, "`getStringFromChar` failed fatally");
-        return;
+// this will create a string froma char *.
+// This means the char * must
+// have a lifetime as long as the string.
+struct StringReturn getStringFromChar(char *string, size_t size,
+                                      struct Arena *arena) {
+    struct StringReturn returnValue = {{string, size, size, arena}, 0};
+    if (string == NULL) {
+        DEBUG_ERROR("NUll pointer has passed to `getStringFromChar`");
+        returnValue.status = 1;
+        return returnValue;
     }
-    String string = stringReturn.string;
-
-    struct StringReturn string_cpy_return = getStringFromString(&string);
-    if (string_cpy_return.status != 0) {
-        ASSERT_TRUE(0, "`getStringFromString` failed fatally");
-        return;
-    }
-
-    String string_cpy = string_cpy_return.string;
-    ASSERT_TRUE(
-        !memcmp(getChar(&string_cpy), "test string", sizeof("test string")),
-        "Check the initialization of the fixed string from char");
-
-    struct StringReturn secondStringReturn = copyStringFromString(&string);
-    if (secondStringReturn.status != 0) {
-        ASSERT_TRUE(0, "`getStringFromString` failed fatally");
-        return;
-    }
-    String secondString = secondStringReturn.string;
-    ASSERT_TRUE(
-        !memcmp(getChar(&secondString), "test string", sizeof("test string")),
-        "Check the copy the fixed string from char");
-    secondString.items[0] = 'T';
-    ASSERT_FALSE(
-        !memcmp(getChar(&secondString), "test string", sizeof("Test string")),
-        "Check the copy changes");
-    ASSERT_TRUE(!memcmp(getChar(&string), "test string", sizeof("Test string")),
-                "Check the original doesn't change");
+    return returnValue;
 }
 
-int main() {
-    struct Arena *memory = createArena();
+// this will create a string from a string from
+// a char pointer. This means the char * must
+// have a lifetime as long as the string.
+struct StringReturn getStringFromString(String *string) {
+    struct StringReturn returnValue = {
+        {string->items, string->size, string->size, string->arena}, 0};
+    if (string == NULL) {
+        DEBUG_ERROR("NUll pointer has passed to `getStringFromString`");
+        returnValue.status = 1;
+        return returnValue;
+    }
+    return returnValue;
+}
+
+// copy the contents of the string. This is using fixed array size.
+struct StringReturn copyStringFromChar(char *string, size_t size,
+                                       struct Arena *arena) {
+    struct StringReturn returnValue = {NEW_ARRAY(), 0};
+    if (string == NULL) {
+        DEBUG_ERROR("NUll pointer has passed to `copyStringFromChar`");
+        returnValue.status = 1;
+        return returnValue;
+    }
     int status = 0;
-    status = setUp(memory);
-    if (status != 0) {
-        printf("Failed to setup the test\n");
-        return status;
+    INIT_ARRAY(returnValue.string, arena, status);
+    if (status != OK) {
+        returnValue.status = status;
+        return returnValue;
     }
-    ADD_TEST(testStringChar);
-    ADD_TEST(testString);
-    runTest();
-    return 0;
+    COPY_POINTER(string, size, returnValue.string, status);
+    if (status != OK) {
+        returnValue.status = status;
+        return returnValue;
+    }
+    return returnValue;
 }
+
+struct StringReturn copyStringFromString(String *string) {
+    struct StringReturn returnValue = {NEW_ARRAY(), 0};
+    if (string == NULL) {
+        DEBUG_ERROR("NUll pointer has passed to `copyStringFromString`");
+        returnValue.status = 1;
+        return returnValue;
+    }
+    int status = 0;
+    INIT_ARRAY(returnValue.string, string->arena, status);
+    if (status != OK) {
+        returnValue.status = status;
+        return returnValue;
+    }
+    COPY(*string, returnValue.string, status);
+    if (status != OK) {
+        returnValue.status = status;
+        return returnValue;
+    }
+    return returnValue;
+}
+

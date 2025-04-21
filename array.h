@@ -1,4 +1,6 @@
-#pragma once
+#ifndef ARRAY_H
+#define ARRAY_H
+
 #include "arena.h"
 #include "debug.h"
 #include <stddef.h>
@@ -206,3 +208,4 @@ static inline void *reallocArray(struct Arena *arena, void *oldPointer,
     memcpy(newPointer, oldPointer, oldAlloc);
     return newPointer;
 }
+#endif

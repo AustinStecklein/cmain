@@ -11,55 +11,20 @@ BUILD_DIR := build
 
 SRCS := $(shell find . -name '*.c' -or -name '*.s')
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
-DEPS := $(OBJS:.o=.d)
-ARENA_DEPS := $(BUILD_DIR)/arena.o
-ARENA_MEM_DEPS := $(BUILD_DIR)/arena_mem.o
-ARRAY_DEPS := $(BUILD_DIR)/arena.o
-ARRAY_DEPS += $(BUILD_DIR)/array.o
 
-UNITTEST_DEPS := $(BUILD_DIR)/unittest.o
-UNITTEST_DEPS += $(BUILD_DIR)/arena.o
-STRING_DEPS := $(BUILD_DIR)/string.o
-STRING_DEPS += $(BUILD_DIR)/arena.o
+SRC_DIRS := ./tests
+INC_DIRS := $(shell find $(SRC_DIRS) -type d)
+INC_FLAGS := $(addprefix -I,$(INC_DIRS))
+CC_FLAGS += $(INC_FLAGS)
 
 # build allocator for valgrind testing
-arena_mem: DEBUG += -DVALGRIND
-arena_mem: DEBUG += -DARENA_DEBUG
-arena: DEBUG += -DARENA_DEBUG
-array_mem: DEBUG += -DVALGRIND
 unittest_mem: DEBUG += -DVALGRIND
-string_mem: DEBUG += -DVALGRIND
 
-# executables definitions
-arena: $(ARENA_DEPS)
-	$(CC) $(LD_FLAGS) $(ARENA_DEPS) -o $(BUILD_DIR)/$@
+unittest: $(OBJS)
+	$(CC) $(LD_FLAGS) $(OBJS) -o $(BUILD_DIR)/$@
 
-arena_mem: $(ARENA_MEM_DEPS)
-	$(CC) $(LD_FLAGS) $(ARENA_MEM_DEPS) -o $(BUILD_DIR)/$@
-	-valgrind --leak-check=full $(BUILD_DIR)/$@
-
-$(BUILD_DIR)/arena_mem.o: arena.c
-	$(CC) $(CC_FLAGS) $(DEBUG) -c $< -o $@
-
-array: $(ARRAY_DEPS)
-	$(CC) $(LD_FLAGS) $(ARRAY_DEPS) -o $(BUILD_DIR)/$@
-
-array_mem: $(ARRAY_DEPS)
-	$(CC) $(LD_FLAGS) $(ARRAY_DEPS) -o $(BUILD_DIR)/$@
-	-valgrind --leak-check=full $(BUILD_DIR)/$@
-
-unittest: $(UNITTEST_DEPS)
-	$(CC) $(LD_FLAGS) $(UNITTEST_DEPS) -o $(BUILD_DIR)/$@
-
-unittest_mem: $(UNITTEST_DEPS)
-	$(CC) $(LD_FLAGS) $(UNITTEST_DEPS) -o $(BUILD_DIR)/$@
-	-valgrind --leak-check=full $(BUILD_DIR)/$@
-
-string: $(STRING_DEPS)
-	$(CC) $(LD_FLAGS) $(STRING_DEPS) -o $(BUILD_DIR)/$@
-
-string_mem: $(STRING_DEPS)
-	$(CC) $(LD_FLAGS) $(STRING_DEPS) -o $(BUILD_DIR)/$@
+unittest_mem: $(OBJS)
+	$(CC) $(LD_FLAGS) $(OBJS) -o $(BUILD_DIR)/$@
 	-valgrind --leak-check=full $(BUILD_DIR)/$@
 
 # Build step for general asm sources
@@ -67,15 +32,16 @@ $(BUILD_DIR)/%.o: %.s
 	$(ASM) $(ASM_FLAGS) $< -o $@
 
 # Build step for general C sources
-$(BUILD_DIR)/%.o: %.c
+$(BUILD_DIR)/%.c.o: %.c
 	$(CC) $(CC_FLAGS) $(DEBUG) -c $< -o $@
 
 .PHONY: clean
 clean:
 	-rm ./build/*
+	-rm ./build/tests/*
 
 .PHONY: format
 format:
-	clang-format -i ./*.c ./*.h
+	clang-format -i ./*.c ./*.h ./tests/*.h ./tests/*.c
 
 -include $(DEPS)

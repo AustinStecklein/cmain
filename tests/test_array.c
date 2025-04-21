@@ -1,5 +1,4 @@
-#include "array.h"
-#include "unittest.h"
+#include "test_array.h"
 
 void testDynamicArray(struct Arena *arrayArena) {
     ARRAY(int) collection = NEW_ARRAY();
@@ -168,7 +167,7 @@ void testFaults(struct Arena *arrayArena) {
     ASSERT_TRUE(status == OK, "status check");
 }
 
-int main() {
+int runArrayTests() {
     struct Arena *memory = createArena();
     int status = 0;
     status = setUp(memory);
