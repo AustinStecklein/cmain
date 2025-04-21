@@ -13,7 +13,6 @@ struct Arena {
     size_t size;
 };
 
-
 // arena creation
 // Since size is a uint32 the max total arena size is 2^32. If you need more
 // than that then you are crazy

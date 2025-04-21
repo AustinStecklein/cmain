@@ -1,6 +1,6 @@
 #include "unittest.h"
-#include "test_array.h"
 #include "test_arena.h"
+#include "test_array.h"
 #include "test_string.h"
 
 struct Arena *allocator = NULL;

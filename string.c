@@ -79,4 +79,3 @@ struct StringReturn copyStringFromString(String *string) {
     }
     return returnValue;
 }
-
