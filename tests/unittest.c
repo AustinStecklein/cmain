@@ -46,7 +46,8 @@ int runTest() {
         if (allTestsPassed) {
             printf("\e[1;32m PASSED\e[0m\n");
             passedTestCount++;
-        } else {
+        }
+        else {
             // only going to reloop if there has been a single failure
             printf("\e[1;31m FAILED\e[0m\n");
             for (int j = 0; j < assertCollection.size; j++) {

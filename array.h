@@ -164,7 +164,8 @@ static inline size_t nextArrayAllocSize(size_t currentlyAlloced) {
             (array_dst).size = (array_src).size;                               \
             memcpy((array_dst).items, (array_src).items,                       \
                    (array_src).size * sizeof((array_dst).items));              \
-        } else {                                                               \
+        }                                                                      \
+        else {                                                                 \
             DEBUG_ERROR("array_dst is a null pointer\n");                      \
             (status) = FAILEDALLOC;                                            \
         }                                                                      \
@@ -184,7 +185,8 @@ static inline size_t nextArrayAllocSize(size_t currentlyAlloced) {
         if ((array_dst).items != NULL) {                                       \
             (array_dst).size = src_size;                                       \
             memcpy((array_dst).items, src_pointer, src_size);                  \
-        } else {                                                               \
+        }                                                                      \
+        else {                                                                 \
             DEBUG_ERROR("array_dst is a null pointer\n");                      \
             (status) = FAILEDALLOC;                                            \
         }                                                                      \

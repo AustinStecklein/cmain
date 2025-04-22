@@ -41,7 +41,8 @@ struct Arena *createSizedArena(uint32_t size) {
     arena->nextNode = NULL;
     if (arena->start != NULL) {
         arena->size = arenaSize - (arena->start - pageStart);
-    } else {
+    }
+    else {
         DEBUG_ERROR("Internal arena alloc failed");
     }
     return arena;
@@ -111,12 +112,14 @@ void burnItDown(struct Arena **arena) {
                 DEBUG_ERROR(log_message);
                 if (log_message != NULL)
                     free(log_message);
-            } else
+            }
+            else
                 // if asprintf fails still log a message
                 DEBUG_ERROR("Fatal error occured while attempting to free "
                             "arena memory");
         }
-    } else
+    }
+    else
         DEBUG_ERROR(
             "The start pointer passed to `burnItDown` was already freed");
     *arena = NULL;
@@ -164,7 +167,8 @@ int freeArena(struct Arena **arena, size_t size) {
         }
         *arena = local_arena_pointer;
         return status;
-    } else {
+    }
+    else {
         // no need to update the arena pointer
         (*arena)->currentOffset -= size;
         return 0;
@@ -245,7 +249,8 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
         // The restore point is within this node
         (*arena)->currentOffset = restorePoint - (*arena)->start;
         return 0;
-    } else {
+    }
+    else {
         if ((*arena)->prevNode == NULL) {
             DEBUG_ERROR("`restoreStrachPad` was unable to find the node that "
                         "contains the restorePoint");

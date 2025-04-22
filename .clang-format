@@ -1,1 +1,4 @@
 IndentWidth: 4
+BreakBeforeBraces: Custom
+BraceWrapping:
+  BeforeElse: true
