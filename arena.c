@@ -92,7 +92,7 @@ void burnItDown(struct Arena **arena) {
     }
     // free all of the pointers now
     if ((*arena)->start != NULL) {
-#ifdef DEBUG
+
 #ifdef VALGRIND
         free((*arena)->start - sizeof(struct Arena));
         int error_code = 0;
@@ -111,24 +111,14 @@ void burnItDown(struct Arena **arena) {
                 DEBUG_ERROR(log_message);
                 if (log_message != NULL)
                     free(log_message);
-            } else {
+            } else
                 // if asprintf fails still log a message
                 DEBUG_ERROR("Fatal error occured while attempting to free "
                             "arena memory");
-            }
         }
-#else
-#ifdef VALGRIND
-        free((*arena)->start - sizeof(struct Arena));
-#else
-        munmap((*arena)->start - sizeof(struct Arena),
-               (*arena)->size + sizeof(struct Arena));
-#endif
-#endif
-    } else {
+    } else
         DEBUG_ERROR(
             "The start pointer passed to `burnItDown` was already freed");
-    }
     *arena = NULL;
 }
 
