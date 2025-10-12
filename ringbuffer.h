@@ -45,7 +45,7 @@
 // Since this is a fixed buffer size I am opting to allow the ring buffer to eat
 // itself without issue. This is very much just do to my use case for graphics
 // but probably not great for other cases.
-#define PUSH_BUFFER(buffer, item, status)                                      \
+#define PUSH_BUFFER(buffer, item)                                              \
     do {                                                                       \
         if ((buffer).array.size == 0) {                                        \
             *((buffer).head) = item;                                           \
@@ -75,6 +75,25 @@
             else {                                                             \
                 (buffer).array.size += 1;                                      \
             }                                                                  \
+        }                                                                      \
+    } while (0)
+
+#define POP_FRONT_BUFFER(buffer)                                               \
+    do {                                                                       \
+        if ((buffer).array.size == 0) {                                        \
+            break;                                                             \
+        }                                                                      \
+        else {                                                                 \
+            if ((buffer).head !=                                               \
+                (buffer).array.items + ((buffer).array.alloc - 1)) {           \
+                (buffer).head = (buffer).head + 1;                             \
+                (buffer).offset_index += 1;                                    \
+            }                                                                  \
+            else {                                                             \
+                (buffer).head = (buffer).array.items;                          \
+                (buffer).offset_index = 0;                                     \
+            }                                                                  \
+            (buffer).array.size -= 1;                                          \
         }                                                                      \
     } while (0)
 
