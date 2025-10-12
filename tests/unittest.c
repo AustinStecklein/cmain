@@ -1,6 +1,7 @@
 #include "unittest.h"
 #include "test_arena.h"
 #include "test_array.h"
+#include "test_buffer.h"
 #include "test_string.h"
 
 struct Arena *allocator = NULL;
@@ -73,5 +74,6 @@ int main() {
     status |= runArenaTests();
     status |= runArrayTests();
     status |= runStringTests();
+    status |= runBufferTests();
     return status;
 }

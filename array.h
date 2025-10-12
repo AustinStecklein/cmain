@@ -11,8 +11,9 @@
 enum ArrayError {
     OK = 0,
     NULLPOINTER = 1,
-    UNINIARRAY = 2,
+    UNINITARRAY = 2,
     FAILEDALLOC = 3,
+    INVALIDARGS = 4,
 };
 
 // fixed arrays that don't make sense to be allocated in an arena due to either
@@ -87,7 +88,7 @@ enum ArrayError {
     do {                                                                       \
         if (!ARRAY_INITIALIZED(array)) {                                       \
             DEBUG_ERROR("called CLEAR_ARRAY with an unintialized array");      \
-            (status) = UNINIARRAY;                                             \
+            (status) = UNINITARRAY;                                            \
             break;                                                             \
         }                                                                      \
         (array).size = 0;                                                      \
@@ -109,12 +110,13 @@ enum ArrayError {
     do {                                                                       \
         if (!ARRAY_INITIALIZED(array)) {                                       \
             DEBUG_ERROR("called PUSH_ARRAY with an unintialized array");       \
-            (status) = UNINIARRAY;                                             \
+            (status) = UNINITARRAY;                                            \
             break;                                                             \
         }                                                                      \
-        if ((array).alloc == (array).size)                                     \
-            REALLOC_ARRAY(array, nextArrayAllocSize((array).size), status);    \
         if ((array).alloc == (array).size) {                                   \
+            REALLOC_ARRAY(array, nextArrayAllocSize((array).size), status);    \
+        }                                                                      \
+        if (status == FAILEDALLOC) {                                           \
             DEBUG_ERROR("cannot add item to array");                           \
             break;                                                             \
         }                                                                      \

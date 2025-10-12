@@ -12,10 +12,11 @@ BUILD_DIR := build
 SRCS := $(shell find . -name '*.c' -or -name '*.s')
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 
-SRC_DIRS := ./tests
+SRC_DIRS := ./tests/
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 CC_FLAGS += $(INC_FLAGS)
+DEPS := $(OBJS:.o=.d)  # Generate dependency files for each object
 
 # build allocator for valgrind testing
 unittest_mem: DEBUG += -DVALGRIND
