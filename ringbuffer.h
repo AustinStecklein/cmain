@@ -106,11 +106,11 @@
             break;                                                             \
         }                                                                      \
         if ((index + (buffer).offset_index) >= (buffer).array.alloc) {         \
-            *(item) = (buffer).array.items[((buffer).offset_index + index) -   \
-                                           (buffer).array.alloc];              \
+            (item) = (buffer).array.items +                                    \
+                     (((buffer).offset_index + index) - (buffer).array.alloc); \
         }                                                                      \
         else {                                                                 \
-            *(item) = (buffer).array.items[index + (buffer).offset_index];     \
+            (item) = (buffer).array.items + (index + (buffer).offset_index);   \
         }                                                                      \
     } while (0)
 
