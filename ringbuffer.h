@@ -28,14 +28,14 @@
             (status) = NULLPOINTER;                                            \
             break;                                                             \
         }                                                                      \
-        if (buffer_size <= 0) {                                                \
-            DEBUG_ERROR("called INIT_BUFFER with a size that is <= 0");        \
+        if (buffer_size <= 1) {                                                \
+            DEBUG_ERROR("called INIT_BUFFER with a size that is <= 1");        \
             (status) = INVALIDARGS;                                            \
             break;                                                             \
         }                                                                      \
         INIT_ARRAY((buffer).array, arena, status);                             \
         REALLOC_ARRAY((buffer).array, buffer_size, status);                    \
-        (buffer).array.size = buffer_size;                                     \
+        (buffer).array.size = 0;                                               \
         (buffer).head = (buffer).array.items;                                  \
         (buffer).tail = (buffer).array.items;                                  \
         (buffer).offset_index = 0;                                             \
@@ -47,24 +47,33 @@
 // but probably not great for other cases.
 #define PUSH_BUFFER(buffer, item, status)                                      \
     do {                                                                       \
-        *((buffer).tail) = item;                                               \
-        if ((buffer).tail !=                                                   \
-            (buffer).array.items + ((buffer).array.size - 1)) {                \
-            (buffer).tail = (buffer).tail + 1;                                 \
-            (buffer).offset_index += 1;                                        \
+        if ((buffer).array.size == 0) {                                        \
+            *((buffer).head) = item;                                           \
+            (buffer).array.size += 1;                                          \
         }                                                                      \
         else {                                                                 \
-            (buffer).tail = (buffer).array.items;                              \
-            (buffer).offset_index = 0;                                         \
-        }                                                                      \
-        if ((buffer).tail == (buffer).head) {                                  \
-            DEBUG_PRINT("Buffer's tail is eating the head");                   \
-            if ((buffer).head !=                                               \
-                (buffer).array.items + ((buffer).array.size - 1)) {            \
-                (buffer).head = (buffer).head + 1;                             \
+            if ((buffer).tail !=                                               \
+                (buffer).array.items + ((buffer).array.alloc - 1)) {           \
+                (buffer).tail = (buffer).tail + 1;                             \
             }                                                                  \
             else {                                                             \
-                (buffer).head = (buffer).array.items;                          \
+                (buffer).tail = (buffer).array.items;                          \
+            }                                                                  \
+            *((buffer).tail) = item;                                           \
+            if ((buffer).tail == (buffer).head) {                              \
+                DEBUG_PRINT("Buffer's tail is eating the head");               \
+                if ((buffer).head !=                                           \
+                    (buffer).array.items + ((buffer).array.alloc - 1)) {       \
+                    (buffer).head = (buffer).head + 1;                         \
+                    (buffer).offset_index += 1;                                \
+                }                                                              \
+                else {                                                         \
+                    (buffer).head = (buffer).array.items;                      \
+                    (buffer).offset_index = 0;                                 \
+                }                                                              \
+            }                                                                  \
+            else {                                                             \
+                (buffer).array.size += 1;                                      \
             }                                                                  \
         }                                                                      \
     } while (0)
