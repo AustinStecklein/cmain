@@ -143,8 +143,10 @@ void testFreeArena(struct Arena *testArena) {
     ASSERT_TRUE(arena->nextNode == NULL, "check next status");
     ASSERT_TRUE(arena->prevNode != NULL, "check prev status");
 
+    b[25] = 5.5;
     // First test that the sized free works in the same node and across nodes
     freeArena(&arena, 15 * sizeof(float));
+    ASSERT_TRUE(b[25] == 0, "Check that the memory is free'ed");
     ASSERT_TRUE(arena->currentOffset >= (25 * sizeof(float)),
                 "check the offset");
     ASSERT_TRUE(arena->nextNode == NULL, "check next status");
@@ -162,7 +164,9 @@ void testFreeArena(struct Arena *testArena) {
     ASSERT_TRUE(c != NULL, "check malloc status");
     ASSERT_TRUE(d != NULL, "check malloc status");
     // free the whole arena
+    d[5] = 26;
     freeWholeArena(&arena);
+    ASSERT_TRUE(d[5] == 0, "Check that the memory is free'ed");
     ASSERT_TRUE(arena->currentOffset == 0, "check that offset has cleared");
     ASSERT_TRUE(arena->nextNode != NULL, "check next status");
     ASSERT_TRUE(arena->prevNode == NULL, "check prev status");
@@ -202,7 +206,9 @@ void testScratchPad(struct Arena *testArena) {
     ASSERT_TRUE(arena->prevNode != NULL,
                 "check that the prev node is not null");
 
+    b[5] = 5;
     restoreSratchPad(&arena, returnPoint);
+    ASSERT_TRUE(b[5] == 0, "Check that the memory is free'ed");
     ASSERT_TRUE(arena->currentOffset >= (20 * sizeof(float)),
                 "check that the offset still makes sense");
     ASSERT_TRUE(arena->nextNode != NULL, "check that the next node is not null "

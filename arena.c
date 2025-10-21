@@ -131,6 +131,7 @@ void freeWholeArena(struct Arena **arena) {
     if (arena == NULL || *arena == NULL) {
         return;
     }
+    memset((*arena)->start, 0, (*arena)->currentOffset);
     (*arena)->currentOffset = 0;
     if ((*arena)->prevNode != NULL) {
         *arena = (*arena)->prevNode;
@@ -162,6 +163,7 @@ int freeArena(struct Arena **arena, size_t size) {
             freeArena(arena, size - local_arena_pointer->currentOffset);
         if (!status) {
             // only start to free if there is enough room
+            memset(local_arena_pointer->start, 0, local_arena_pointer->currentOffset);
             local_arena_pointer->currentOffset = 0;
             return status;
         }
@@ -170,6 +172,7 @@ int freeArena(struct Arena **arena, size_t size) {
     }
     else {
         // no need to update the arena pointer
+        memset((*arena)->start + ((*arena)->currentOffset - size), 0, size);
         (*arena)->currentOffset -= size;
         return 0;
     }
@@ -247,6 +250,7 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
     if ((*arena)->start <= restorePoint &&
         restorePoint <= ((*arena)->start + (*arena)->size)) {
         // The restore point is within this node
+        memset(restorePoint, 0, ((*arena)->start + (*arena)->currentOffset) - restorePoint);
         (*arena)->currentOffset = restorePoint - (*arena)->start;
         return 0;
     }
@@ -260,6 +264,7 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
         *arena = (*arena)->prevNode;
         int status = restoreSratchPad(arena, restorePoint);
         if (!status) {
+            memset(localArenaPointer->start, 0, localArenaPointer->currentOffset);
             localArenaPointer->currentOffset = 0;
             return status;
         }

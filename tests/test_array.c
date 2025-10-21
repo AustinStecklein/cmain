@@ -108,6 +108,21 @@ void testCopy(struct Arena *arrayArena) {
                 "Check that both collections have the same values");
     ASSERT_TRUE(collection_1.items[4] == collection_2.items[4],
                 "Check that both collections have the same values");
+    collection_1.items[0] = 21;
+    collection_1.items[1] = 22;
+    collection_1.items[2] = 23;
+    collection_1.items[3] = 24;
+    collection_1.items[4] = 25;
+    ASSERT_TRUE(collection_1.items[0] != collection_2.items[0],
+                "Check that both collections don't have the same values");
+    ASSERT_TRUE(collection_1.items[1] != collection_2.items[1],
+                "Check that both collections don't have the same values");
+    ASSERT_TRUE(collection_1.items[2] != collection_2.items[2],
+                "Check that both collections don't have the same values");
+    ASSERT_TRUE(collection_1.items[3] != collection_2.items[3],
+                "Check that both collections don't have the same values");
+    ASSERT_TRUE(collection_1.items[4] != collection_2.items[4],
+                "Check that both collections don't have the same values");
 }
 
 void testCopyPointer(struct Arena *arrayArena) {

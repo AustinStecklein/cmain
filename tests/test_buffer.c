@@ -84,6 +84,26 @@ void testWrapBufferWithGet(struct Arena *arrayArena) {
     ASSERT_TRUE(collection.array.alloc == 5, "check alloc'ed size");
 }
 
+void testPopBufferZeros(struct Arena *arrayArena) {
+    BUFFER(int) collection = NEW_BUFFER();
+    int status = 0;
+    INIT_BUFFER(collection, arrayArena, 5, status);
+    ASSERT_TRUE(status == OK, "status check");
+    PUSH_BUFFER(collection, 5);
+    ASSERT_TRUE(status == OK, "status check");
+    PUSH_BUFFER(collection, 7);
+    ASSERT_TRUE(status == OK, "status check");
+    PUSH_BUFFER(collection, 9);
+    ASSERT_TRUE(status == OK, "status check");
+    PUSH_BUFFER(collection, 1);
+    ASSERT_TRUE(status == OK, "status check");
+    PUSH_BUFFER(collection, 2);
+    ASSERT_TRUE(status == OK, "status check");
+    ASSERT_TRUE(collection.array.items[0] != 0, "Double check that the first item in the list is not zero");
+    POP_FRONT_BUFFER(collection);
+    ASSERT_TRUE(collection.array.items[0] == 0, "Check that the buffer is zeroing memory after popping");
+}
+
 void testPopBuffer(struct Arena *arrayArena) {
     BUFFER(int) collection = NEW_BUFFER();
     int status = 0;
@@ -160,6 +180,7 @@ int runBufferTests() {
     ADD_TEST(testBuffer);
     ADD_TEST(testWrapBuffer);
     ADD_TEST(testWrapBufferWithGet);
+    ADD_TEST(testPopBufferZeros);
     ADD_TEST(testPopBuffer);
     ADD_TEST(testLargeBuffer);
     return runTest();

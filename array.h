@@ -64,6 +64,13 @@ enum ArrayError {
         size_t alloc;                                                          \
         struct Arena *arena;                                                   \
     }
+#define ARRAY_DEFINE(type, name)                                               \
+    typedef struct {                                                           \
+        type *items;                                                           \
+        size_t size;                                                           \
+        size_t alloc;                                                          \
+        struct Arena *arena;                                                   \
+    } name
 
 // used to fill the array with empty references
 #define NEW_ARRAY() {0, 0, 0, 0}
@@ -157,15 +164,16 @@ static inline size_t nextArrayAllocSize(size_t currentlyAlloced) {
             (status) = NULLPOINTER;                                            \
             break;                                                             \
         }                                                                      \
-        if ((array_dst).alloc <= (array_src).size) {                           \
+        if ((array_dst).alloc < (array_src).size) {                            \
             (array_dst).items =                                                \
                 mallocArena(&(array_dst).arena,                                \
                             (array_src).size * sizeof((array_dst).items));     \
+            (array_dst).alloc = (array_src).size;\
         }                                                                      \
         if ((array_dst).items != NULL) {                                       \
-            (array_dst).size = (array_src).size;                               \
-            memcpy((array_dst).items, (array_src).items,                       \
+            memmove((array_dst).items, (array_src).items,                       \
                    (array_src).size * sizeof((array_dst).items));              \
+            (array_dst).size = (array_src).size;                               \
         }                                                                      \
         else {                                                                 \
             DEBUG_ERROR("array_dst is a null pointer\n");                      \

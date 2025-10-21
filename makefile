@@ -5,7 +5,7 @@ LD_FLAGS = -lm
 DEBUG = -ggdb3
 ASM = nasm
 ASM_FLAGS = -felf64 -g
-LD = ld
+LD = ld -lasan
 
 BUILD_DIR := build
 
@@ -22,7 +22,7 @@ DEPS := $(OBJS:.o=.d)  # Generate dependency files for each object
 unittest_mem: DEBUG += -DVALGRIND
 
 unittest: $(OBJS)
-	$(CC) $(LD_FLAGS) $(OBJS) -o $(BUILD_DIR)/$@
+	$(CC) $(LD_FLAGS) $(OBJS) -fsanitize=address,undefined -static-libasan -o $(BUILD_DIR)/$@
 
 unittest_mem: $(OBJS)
 	$(CC) $(LD_FLAGS) $(OBJS) -o $(BUILD_DIR)/$@
@@ -40,6 +40,10 @@ $(BUILD_DIR)/%.c.o: %.c
 clean:
 	-rm ./build/*
 	-rm ./build/tests/*
+
+.PHONY: check
+check:
+	cppcheck . --check-level=exhaustive
 
 .PHONY: format
 format:

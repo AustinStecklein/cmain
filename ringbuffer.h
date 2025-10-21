@@ -84,6 +84,7 @@
             break;                                                             \
         }                                                                      \
         else {                                                                 \
+            *((buffer).head) = 0;\
             if ((buffer).head !=                                               \
                 (buffer).array.items + ((buffer).array.alloc - 1)) {           \
                 (buffer).head = (buffer).head + 1;                             \
