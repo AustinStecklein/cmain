@@ -30,6 +30,6 @@ void *mallocArena(struct Arena **arena, size_t size);
 void *zmallocArena(struct Arena **arena, size_t size);
 
 // scratch pad methods
-void *startScratchPad(struct Arena *arena);
+void *startScratchPad(const struct Arena *arena);
 int restoreSratchPad(struct Arena **arena, void *restorePoint);
 #endif

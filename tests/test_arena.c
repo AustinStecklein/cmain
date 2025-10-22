@@ -4,7 +4,7 @@
 
 struct Arena *createArenaNode(struct Arena *prev, int size);
 
-void testCreateArena(struct Arena *testArena) {
+static void testCreateArena(struct Arena *testArena) {
     // test the creation of the arena
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
@@ -19,7 +19,7 @@ void testCreateArena(struct Arena *testArena) {
     ASSERT_TRUE(arena == NULL, "check cleanup");
 }
 
-void testAllocMemory(struct Arena *testArena) {
+static void testAllocMemory(struct Arena *testArena) {
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
@@ -94,7 +94,7 @@ void testAllocMemory(struct Arena *testArena) {
     burnItDown(&arena);
 }
 
-void testZAllocMemory(struct Arena *testArena) {
+static void testZAllocMemory(struct Arena *testArena) {
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
@@ -115,7 +115,7 @@ void testZAllocMemory(struct Arena *testArena) {
     burnItDown(&arena);
 }
 
-void testFreeArena(struct Arena *testArena) {
+static void testFreeArena(struct Arena *testArena) {
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
@@ -174,7 +174,7 @@ void testFreeArena(struct Arena *testArena) {
     burnItDown(&arena);
 }
 
-void testScratchPad(struct Arena *testArena) {
+static void testScratchPad(struct Arena *testArena) {
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
@@ -221,7 +221,7 @@ void testScratchPad(struct Arena *testArena) {
     burnItDown(&arena);
 }
 
-void testMemoryAlignment(struct Arena *testArena) {
+static void testMemoryAlignment(struct Arena *testArena) {
     // show that memory will be auto aligned
     uint32_t size = getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
@@ -249,7 +249,7 @@ void testMemoryAlignment(struct Arena *testArena) {
     burnItDown(&arena);
 }
 
-void testArenaFaults(struct Arena *testArena) {
+static void testArenaFaults(struct Arena *testArena) {
     DEBUG_PRINT("`testArenaFaults` will trigger many Error prints. As long as "
                 "there is not seg faults this is expected");
     struct Arena *arena_a = createArenaNode(NULL, 0);
@@ -281,7 +281,7 @@ void testArenaFaults(struct Arena *testArena) {
     ASSERT_TRUE(d == -1, "Check safe null returns");
     int e = restoreSratchPad(&arena_b, stored);
     ASSERT_TRUE(e == -1, "Check safe null returns");
-    int f = restoreSratchPad(&arena_c, stored - 1);
+    int f = restoreSratchPad(&arena_c, (char *)stored - 1);
     ASSERT_TRUE(f == -1, "Check bad stored pointer");
 
     burnItDown(&arena_c);

@@ -1,6 +1,6 @@
 #include "test_array.h"
 
-void testDynamicArray(struct Arena *arrayArena) {
+static void testDynamicArray(struct Arena *arrayArena) {
     ARRAY(int) collection = NEW_ARRAY();
     int status = 0;
     INIT_ARRAY(collection, arrayArena, status);
@@ -27,7 +27,7 @@ void testDynamicArray(struct Arena *arrayArena) {
     ASSERT_TRUE(collection.alloc == 8, "check alloc'ed size");
 }
 
-void testStaticArray(struct Arena *arrayArena) {
+static void testStaticArray(struct Arena *arrayArena) {
     FIXED_ARRAY(float) collection = NEW_FIXED_ARRAY();
     int status = 0;
     INIT_FIXED_ARRAY(collection, 1024, status);
@@ -41,7 +41,7 @@ void testStaticArray(struct Arena *arrayArena) {
     FREE_FIXED_ARRAY(collection);
 }
 
-void testClearArray(struct Arena *arrayArena) {
+static void testClearArray(struct Arena *arrayArena) {
     ARRAY(int) collection = NEW_ARRAY();
     int status = 0;
     INIT_ARRAY(collection, arrayArena, status);
@@ -63,7 +63,7 @@ void testClearArray(struct Arena *arrayArena) {
     ASSERT_TRUE(collection.size == 0, "Check that clear worked");
 }
 
-void testCheckInitializedArray(struct Arena *arrayArena) {
+static void testCheckInitializedArray(struct Arena *arrayArena) {
     ARRAY(int) collection = NEW_ARRAY();
     ASSERT_FALSE((ARRAY_INITIALIZED(collection)),
                  "Check that array is not showing as initialized");
@@ -74,7 +74,7 @@ void testCheckInitializedArray(struct Arena *arrayArena) {
                 "Check that array is showing as initialized");
 }
 
-void testCopy(struct Arena *arrayArena) {
+static void testCopy(struct Arena *arrayArena) {
     ARRAY(int) collection_1 = NEW_ARRAY();
     int status = 0;
     INIT_ARRAY(collection_1, arrayArena, status);
@@ -125,7 +125,7 @@ void testCopy(struct Arena *arrayArena) {
                 "Check that both collections don't have the same values");
 }
 
-void testCopyPointer(struct Arena *arrayArena) {
+static void testCopyPointer(struct Arena *arrayArena) {
     char collection_1[5] = {'a', 'k', 's', 'q', 'i'};
     ARRAY(char) collection_2 = NEW_ARRAY();
     int status = 0;
@@ -145,7 +145,7 @@ void testCopyPointer(struct Arena *arrayArena) {
                 "Check that both collections have the same values");
 }
 
-void testFaults(struct Arena *arrayArena) {
+static void testFaults(struct Arena *arrayArena) {
     DEBUG_PRINT("`testFaults` will trigger many Error prints. As long as "
                 "there is not seg faults this is expected");
     ARRAY(int) collection_1 = NEW_ARRAY();

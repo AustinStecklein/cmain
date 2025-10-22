@@ -1,6 +1,6 @@
 #include "test_string.h"
 
-void testStringChar(struct Arena *arena) {
+static void testStringChar(struct Arena *arena) {
     struct StringReturn stringReturn =
         getStringFromChar("test string", 12, arena);
     if (stringReturn.status != 0) {
@@ -29,7 +29,7 @@ void testStringChar(struct Arena *arena) {
                 "Check the original doesn't change");
 }
 
-void testString(struct Arena *arena) {
+static void testString(struct Arena *arena) {
     struct StringReturn stringReturn =
         getStringFromChar("test string", 12, arena);
     if (stringReturn.status != 0) {

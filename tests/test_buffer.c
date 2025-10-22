@@ -2,7 +2,7 @@
 #include "unittest.h"
 #include <stdio.h>
 
-void testBuffer(struct Arena *arrayArena) {
+static void testBuffer(struct Arena *arrayArena) {
     BUFFER(int) collection = NEW_BUFFER();
     int status = 0;
     INIT_BUFFER(collection, arrayArena, 5, status);
@@ -26,7 +26,7 @@ void testBuffer(struct Arena *arrayArena) {
     ASSERT_TRUE(collection.array.alloc == 5, "check alloc'ed size");
 }
 
-void testWrapBuffer(struct Arena *arrayArena) {
+static void testWrapBuffer(struct Arena *arrayArena) {
     BUFFER(int) collection = NEW_BUFFER();
     int status = 0;
     INIT_BUFFER(collection, arrayArena, 5, status);
@@ -52,7 +52,7 @@ void testWrapBuffer(struct Arena *arrayArena) {
     ASSERT_TRUE(collection.array.alloc == 5, "check alloc'ed size");
 }
 
-void testWrapBufferWithGet(struct Arena *arrayArena) {
+static void testWrapBufferWithGet(struct Arena *arrayArena) {
     BUFFER(int) collection = NEW_BUFFER();
     int status = 0;
     INIT_BUFFER(collection, arrayArena, 5, status);
@@ -84,7 +84,7 @@ void testWrapBufferWithGet(struct Arena *arrayArena) {
     ASSERT_TRUE(collection.array.alloc == 5, "check alloc'ed size");
 }
 
-void testPopBufferZeros(struct Arena *arrayArena) {
+static void testPopBufferZeros(struct Arena *arrayArena) {
     BUFFER(int) collection = NEW_BUFFER();
     int status = 0;
     INIT_BUFFER(collection, arrayArena, 5, status);
@@ -99,12 +99,14 @@ void testPopBufferZeros(struct Arena *arrayArena) {
     ASSERT_TRUE(status == OK, "status check");
     PUSH_BUFFER(collection, 2);
     ASSERT_TRUE(status == OK, "status check");
-    ASSERT_TRUE(collection.array.items[0] != 0, "Double check that the first item in the list is not zero");
+    ASSERT_TRUE(collection.array.items[0] != 0,
+                "Double check that the first item in the list is not zero");
     POP_FRONT_BUFFER(collection);
-    ASSERT_TRUE(collection.array.items[0] == 0, "Check that the buffer is zeroing memory after popping");
+    ASSERT_TRUE(collection.array.items[0] == 0,
+                "Check that the buffer is zeroing memory after popping");
 }
 
-void testPopBuffer(struct Arena *arrayArena) {
+static void testPopBuffer(struct Arena *arrayArena) {
     BUFFER(int) collection = NEW_BUFFER();
     int status = 0;
     INIT_BUFFER(collection, arrayArena, 5, status);
@@ -135,7 +137,7 @@ void testPopBuffer(struct Arena *arrayArena) {
     ASSERT_TRUE(collection.array.alloc == 5, "check alloc'ed size");
 }
 
-void testLargeBuffer(struct Arena *arrayArena) {
+static void testLargeBuffer(struct Arena *arrayArena) {
     BUFFER(int) collection = NEW_BUFFER();
     int status = 0;
     INIT_BUFFER(collection, arrayArena, 15, status);

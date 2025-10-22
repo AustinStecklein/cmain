@@ -13,7 +13,7 @@
 // The size passed in is a reference to the size of the object that will
 // get allocated. This allows for arena nodes to be larger than a page
 // size in the case that happens.
-struct Arena *createSizedArena(uint32_t size) {
+static struct Arena *createSizedArena(uint32_t size) {
     uint32_t pageSize = getpagesize();
     uint32_t allocableSpace = pageSize - sizeof(struct Arena);
     // if the page size is zero here then we got more problems then allocating
@@ -34,7 +34,7 @@ struct Arena *createSizedArena(uint32_t size) {
         DEBUG_ERROR("Initial arena alloc failed");
         return NULL;
     }
-    arena->start = pageStart + sizeof(struct Arena);
+    arena->start = (char *)pageStart + sizeof(struct Arena);
     arena->currentOffset = 0;
     arena->size = 0;
     arena->prevNode = NULL;
@@ -95,11 +95,12 @@ void burnItDown(struct Arena **arena) {
     if ((*arena)->start != NULL) {
 
 #ifdef VALGRIND
-        free((*arena)->start - sizeof(struct Arena));
+        free((char *)(*arena)->start - sizeof(struct Arena));
         int error_code = 0;
 #else
-        int error_code = munmap((*arena)->start - sizeof(struct Arena),
-                                (*arena)->size + sizeof(struct Arena));
+        int error_code =
+            munmap((char *)((*arena)->start) - sizeof(struct Arena),
+                   (*arena)->size + sizeof(struct Arena));
 #endif
         // this will allocate memory from the heap instead of from the arena so
         // this is hidden behind the debug flag
@@ -163,7 +164,8 @@ int freeArena(struct Arena **arena, size_t size) {
             freeArena(arena, size - local_arena_pointer->currentOffset);
         if (!status) {
             // only start to free if there is enough room
-            memset(local_arena_pointer->start, 0, local_arena_pointer->currentOffset);
+            memset(local_arena_pointer->start, 0,
+                   local_arena_pointer->currentOffset);
             local_arena_pointer->currentOffset = 0;
             return status;
         }
@@ -172,7 +174,8 @@ int freeArena(struct Arena **arena, size_t size) {
     }
     else {
         // no need to update the arena pointer
-        memset((*arena)->start + ((*arena)->currentOffset - size), 0, size);
+        memset((char *)(*arena)->start + ((*arena)->currentOffset - size), 0,
+               size);
         (*arena)->currentOffset -= size;
         return 0;
     }
@@ -190,11 +193,12 @@ void *mallocArena(struct Arena **arena, size_t size) {
     // already room in this node. Lets use it.
     if ((*arena)->size >= (size + (*arena)->currentOffset)) {
         // check that there is still room if we add the alignment offset
-        void *currentFree = (*arena)->start + (*arena)->currentOffset;
+        void *currentFree = (char *)(*arena)->start + (*arena)->currentOffset;
         void *startOfRegion =
             (void *)(((uint64_t)currentFree + (alignment - 1)) &
                      ~(alignment - 1));
-        if (startOfRegion <= ((*arena)->start + (*arena)->size)) {
+        if ((char *)startOfRegion <=
+            ((char *)(*arena)->start + (*arena)->size)) {
             (*arena)->currentOffset += size + (startOfRegion - currentFree);
             return startOfRegion;
         }
@@ -230,12 +234,12 @@ void *zmallocArena(struct Arena **arena, size_t size) {
     return memoryLocation;
 }
 
-void *startScratchPad(struct Arena *arena) {
+void *startScratchPad(const struct Arena *arena) {
     if (arena == NULL) {
         DEBUG_ERROR("`startScratchPad` was called with a bad arena pointer");
         return NULL;
     }
-    return arena->start + arena->currentOffset;
+    return (char *)arena->start + arena->currentOffset;
 }
 
 int restoreSratchPad(struct Arena **arena, void *restorePoint) {
@@ -248,9 +252,11 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
     }
 
     if ((*arena)->start <= restorePoint &&
-        restorePoint <= ((*arena)->start + (*arena)->size)) {
+        (char *)restorePoint <= ((char *)(*arena)->start + (*arena)->size)) {
         // The restore point is within this node
-        memset(restorePoint, 0, ((*arena)->start + (*arena)->currentOffset) - restorePoint);
+        memset(restorePoint, 0,
+               ((char *)(*arena)->start + (*arena)->currentOffset) -
+                   (char *)restorePoint);
         (*arena)->currentOffset = restorePoint - (*arena)->start;
         return 0;
     }
@@ -264,7 +270,8 @@ int restoreSratchPad(struct Arena **arena, void *restorePoint) {
         *arena = (*arena)->prevNode;
         int status = restoreSratchPad(arena, restorePoint);
         if (!status) {
-            memset(localArenaPointer->start, 0, localArenaPointer->currentOffset);
+            memset(localArenaPointer->start, 0,
+                   localArenaPointer->currentOffset);
             localArenaPointer->currentOffset = 0;
             return status;
         }

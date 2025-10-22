@@ -43,10 +43,13 @@ clean:
 
 .PHONY: check
 check:
-	cppcheck . --check-level=exhaustive
+	cppcheck . --enable=portability $(INC_FLAGS) --check-level=exhaustive
 
 .PHONY: format
 format:
 	clang-format -i ./*.c ./*.h ./tests/*.h ./tests/*.c
+
+.PHONY: all
+all: format check clean
 
 -include $(DEPS)

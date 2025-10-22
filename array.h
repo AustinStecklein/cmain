@@ -168,11 +168,11 @@ static inline size_t nextArrayAllocSize(size_t currentlyAlloced) {
             (array_dst).items =                                                \
                 mallocArena(&(array_dst).arena,                                \
                             (array_src).size * sizeof((array_dst).items));     \
-            (array_dst).alloc = (array_src).size;\
+            (array_dst).alloc = (array_src).size;                              \
         }                                                                      \
         if ((array_dst).items != NULL) {                                       \
-            memmove((array_dst).items, (array_src).items,                       \
-                   (array_src).size * sizeof((array_dst).items));              \
+            memmove((array_dst).items, (array_src).items,                      \
+                    (array_src).size * sizeof((array_dst).items));             \
             (array_dst).size = (array_src).size;                               \
         }                                                                      \
         else {                                                                 \
