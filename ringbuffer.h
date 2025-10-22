@@ -84,7 +84,7 @@
             break;                                                             \
         }                                                                      \
         else {                                                                 \
-            *((buffer).head) = 0;                                              \
+            memset((buffer).head, 0, sizeof(*((buffer).head)));                \
             if ((buffer).head !=                                               \
                 (buffer).array.items + ((buffer).array.alloc - 1)) {           \
                 (buffer).head = (buffer).head + 1;                             \
