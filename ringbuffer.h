@@ -1,19 +1,21 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "arena.h"
-#include "array.h"
+#include "arena.h" // NOLINT
+#include "array.h" // NOLINT
 #include "debug.h"
 
 #define BUFFER(type)                                                           \
     struct buffer {                                                            \
         ARRAY(type) array;                                                     \
+        /*NOLINTNEXTLINE*/                                                     \
         type *head;                                                            \
+        /*NOLINTNEXTLINE*/                                                     \
         type *tail;                                                            \
         uint32_t offset_index;                                                 \
     }
 
-#define NEW_BUFFER() {NEW_ARRAY(), 0, 0}
+#define NEW_BUFFER() {NEW_ARRAY(), 0, 0, 0}
 // init a ring buffer. This is different from the array in that it wont play
 // that nice with the arena allocator. This is just do to how reallocs have to
 // happen. Due to this a size is required and larger buffers will not be
@@ -21,14 +23,14 @@
 // am fine with fixed buffer sizes
 #define INIT_BUFFER(buffer, arena, buffer_size, status)                        \
     do {                                                                       \
-        if (arena == NULL) {                                                   \
+        if ((arena) == NULL) {                                                 \
             DEBUG_ERROR(                                                       \
                 "called INIT_BUFFER with either a null array or arena "        \
                 "pointer");                                                    \
             (status) = NULLPOINTER;                                            \
             break;                                                             \
         }                                                                      \
-        if (buffer_size <= 1) {                                                \
+        if ((buffer_size) <= 1) {                                              \
             DEBUG_ERROR("called INIT_BUFFER with a size that is <= 1");        \
             (status) = INVALIDARGS;                                            \
             break;                                                             \
@@ -100,18 +102,19 @@
 
 #define GET_ITEM(buffer, index, item, status)                                  \
     do {                                                                       \
-        if ((buffer).array.alloc <= index) {                                   \
+        if ((buffer).array.alloc <= (index)) {                                 \
             DEBUG_ERROR(                                                       \
                 "Called GET_ITEM with an index that was larger than buffer");  \
             (status) = INVALIDARGS;                                            \
             break;                                                             \
         }                                                                      \
-        if ((index + (buffer).offset_index) >= (buffer).array.alloc) {         \
-            (item) = (buffer).array.items +                                    \
-                     (((buffer).offset_index + index) - (buffer).array.alloc); \
+        if (((index) + (buffer).offset_index) >= (buffer).array.alloc) {       \
+            (item) =                                                           \
+                (buffer).array.items +                                         \
+                (((buffer).offset_index + (index)) - (buffer).array.alloc);    \
         }                                                                      \
         else {                                                                 \
-            (item) = (buffer).array.items + (index + (buffer).offset_index);   \
+            (item) = (buffer).array.items + ((index) + (buffer).offset_index); \
         }                                                                      \
     } while (0)
 

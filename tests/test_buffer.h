@@ -4,5 +4,5 @@
 #include "../ringbuffer.h"
 #include "unittest.h"
 
-int runBufferTests();
+int runBufferTests(void);
 #endif

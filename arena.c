@@ -8,18 +8,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h> // mmap
-#include <unistd.h>   // getpagesize
+#include <unistd.h>
 
 // The size passed in is a reference to the size of the object that will
 // get allocated. This allows for arena nodes to be larger than a page
 // size in the case that happens.
-static struct Arena *createSizedArena(uint32_t size) {
-    uint32_t pageSize = getpagesize();
+static struct Arena *createSizedArena(size_t size) {
+    uint32_t pageSize = sysconf(_SC_PAGESIZE);
     uint32_t allocableSpace = pageSize - sizeof(struct Arena);
     // if the page size is zero here then we got more problems then allocating
     // memory
     uint32_t arenaSize =
-        pageSize * (int)ceill(((float)size / (float)allocableSpace));
+        pageSize * (uint32_t)ceill(((float)size / (float)allocableSpace));
     // build the arena! "is that a freaking void pointer - mike"
 #ifdef VALGRIND
     // it is just easier to use the heap with valgrind
@@ -48,14 +48,14 @@ static struct Arena *createSizedArena(uint32_t size) {
     return arena;
 }
 
-struct Arena *createArena() {
+struct Arena *createArena(void) {
     // just pass in 1 since we don't really care about the size. We just want
     // the arena to be at the default page size.
     return createSizedArena(1);
 }
 
 // private function used to create additional nodes
-struct Arena *createArenaNode(struct Arena *prev, int size) {
+struct Arena *createArenaNode(struct Arena *prev, size_t size) {
     // if the arena pointers are null then it is at the end of the tree of nodes
     if (prev == NULL) {
         DEBUG_ERROR("`createArenaNode` was called with a bad arena pointer");
@@ -105,24 +105,14 @@ void burnItDown(struct Arena **arena) {
         // this will allocate memory from the heap instead of from the arena so
         // this is hidden behind the debug flag
         if (error_code != 0) {
-            char *log_message = NULL;
-            if (asprintf(&log_message,
-                         "Fatal error %d occured while attempting to free "
-                         "arena memory\n",
-                         error_code) > 0) {
-                DEBUG_ERROR(log_message);
-                if (log_message != NULL)
-                    free(log_message);
-            }
-            else
-                // if asprintf fails still log a message
-                DEBUG_ERROR("Fatal error occured while attempting to free "
-                            "arena memory");
+            DEBUG_ERROR("Fatal error occured while attempting to free "
+                        "arena memory");
         }
     }
-    else
+    else {
         DEBUG_ERROR(
             "The start pointer passed to `burnItDown` was already freed");
+    }
     *arena = NULL;
 }
 
@@ -188,15 +178,19 @@ void *mallocArena(struct Arena **arena, size_t size) {
     }
     // get the alignment offset
     uint64_t alignment = size;
-    if (size > alignof(max_align_t))
+    if (size > alignof(max_align_t)) {
         alignment = alignof(max_align_t);
+    }
     // already room in this node. Lets use it.
     if ((*arena)->size >= (size + (*arena)->currentOffset)) {
         // check that there is still room if we add the alignment offset
         void *currentFree = (char *)(*arena)->start + (*arena)->currentOffset;
-        void *startOfRegion =
-            (void *)(((uint64_t)currentFree + (alignment - 1)) &
-                     ~(alignment - 1));
+        uintptr_t maybe_underbiased_intptr = (uintptr_t)currentFree;
+        uintptr_t aligned_biased_intptr =
+            maybe_underbiased_intptr + (alignment - 1);
+        uintptr_t aligned_intptr = aligned_biased_intptr & (~(alignment - 1));
+        uintptr_t bias = aligned_intptr - maybe_underbiased_intptr;
+        void *startOfRegion = currentFree + bias;
         if ((char *)startOfRegion <=
             ((char *)(*arena)->start + (*arena)->size)) {
             (*arena)->currentOffset += size + (startOfRegion - currentFree);

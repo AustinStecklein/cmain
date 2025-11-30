@@ -4,6 +4,6 @@
 #include "../arena.h"
 #include "unittest.h"
 
-int runArenaTests();
+int runArenaTests(void);
 
 #endif

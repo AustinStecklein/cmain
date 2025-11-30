@@ -1,4 +1,7 @@
 #include "string.h"
+#include "arena.h"
+#include "array.h"
+#include "debug.h"
 
 char *getChar(String *string) {
     if (string == NULL) {

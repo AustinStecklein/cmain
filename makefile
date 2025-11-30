@@ -43,7 +43,7 @@ clean:
 
 .PHONY: check
 check:
-	cppcheck . --enable=portability $(INC_FLAGS) --check-level=exhaustive
+	clang-tidy  *.c *.h
 
 .PHONY: format
 format:

@@ -4,5 +4,5 @@
 #include "../array.h"
 #include "unittest.h"
 
-int runArrayTests();
+int runArrayTests(void);
 #endif

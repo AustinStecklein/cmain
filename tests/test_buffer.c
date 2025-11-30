@@ -1,4 +1,5 @@
 #include "test_buffer.h"
+#include "../ringbuffer.h"
 #include "unittest.h"
 #include <stdio.h>
 
@@ -171,7 +172,7 @@ static void testLargeBuffer(struct Arena *arrayArena) {
     ASSERT_TRUE(collection.array.alloc == 15, "check alloc'ed size");
 }
 
-int runBufferTests() {
+int runBufferTests(void) {
     struct Arena *memory = createArena();
     int status = 0;
     status = setUp(memory);

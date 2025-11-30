@@ -66,7 +66,7 @@ static void testString(struct Arena *arena) {
                 "Check the original doesn't change");
 }
 
-int runStringTests() {
+int runStringTests(void) {
     struct Arena *memory = createArena();
     int status = 0;
     status = setUp(memory);

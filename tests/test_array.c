@@ -28,6 +28,7 @@ static void testDynamicArray(struct Arena *arrayArena) {
 }
 
 static void testStaticArray(struct Arena *arrayArena) {
+    (void)arrayArena;
     FIXED_ARRAY(float) collection = NEW_FIXED_ARRAY();
     int status = 0;
     INIT_FIXED_ARRAY(collection, 1024, status);
@@ -182,7 +183,7 @@ static void testFaults(struct Arena *arrayArena) {
     ASSERT_TRUE(status == OK, "status check");
 }
 
-int runArrayTests() {
+int runArrayTests(void) {
     struct Arena *memory = createArena();
     int status = 0;
     status = setUp(memory);

@@ -1,7 +1,8 @@
 #ifndef STRING_H
 #define STRING_H
+#include "arena.h"
 #include "array.h"
-#include "debug.h"
+#include <stddef.h>
 
 typedef ARRAY(char) String;
 

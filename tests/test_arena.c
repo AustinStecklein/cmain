@@ -1,12 +1,15 @@
 #include "test_arena.h"
 #include "unittest.h"
 #include <stdalign.h> // alignof, max_align_t
+#include <stdint.h>
+#include <unistd.h>
 
 struct Arena *createArenaNode(struct Arena *prev, int size);
 
 static void testCreateArena(struct Arena *testArena) {
+    (void)testArena;
     // test the creation of the arena
-    uint32_t size = getpagesize() - sizeof(struct Arena);
+    uint32_t size = (uint32_t)getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     ASSERT_TRUE(arena->size == size, "check arena size");
     ASSERT_TRUE(arena->currentOffset == 0, "check current offset");
@@ -20,7 +23,8 @@ static void testCreateArena(struct Arena *testArena) {
 }
 
 static void testAllocMemory(struct Arena *testArena) {
-    uint32_t size = getpagesize() - sizeof(struct Arena);
+    (void)testArena;
+    uint32_t size = (uint32_t)getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
     ASSERT_TRUE(arena->size == size, "check arena size");
@@ -84,8 +88,8 @@ static void testAllocMemory(struct Arena *testArena) {
     ASSERT_TRUE(arena->nextNode == NULL, "check next status");
     ASSERT_TRUE(arena->prevNode != NULL, "check prev status");
 
-    float *e = mallocArena(&arena, 2 * getpagesize());
-    uint32_t largeSize = (3 * getpagesize()) - sizeof(struct Arena);
+    float *e = mallocArena(&arena, 2 * (uint32_t)getpagesize());
+    uint32_t largeSize = (3 * (uint32_t)getpagesize()) - sizeof(struct Arena);
     ASSERT_TRUE(d != NULL, "check malloc'ed pointer status");
     ASSERT_TRUE((uint64_t)e % alignof(float) == 0,
                 "check returned memory is aligned");
@@ -95,7 +99,8 @@ static void testAllocMemory(struct Arena *testArena) {
 }
 
 static void testZAllocMemory(struct Arena *testArena) {
-    uint32_t size = getpagesize() - sizeof(struct Arena);
+    (void)testArena;
+    uint32_t size = (uint32_t)getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
     ASSERT_TRUE(arena->size == size, "check size");
@@ -116,7 +121,8 @@ static void testZAllocMemory(struct Arena *testArena) {
 }
 
 static void testFreeArena(struct Arena *testArena) {
-    uint32_t size = getpagesize() - sizeof(struct Arena);
+    (void)testArena;
+    uint32_t size = (uint32_t)getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
     ASSERT_TRUE(arena->size == size, "check initial size");
@@ -129,7 +135,8 @@ static void testFreeArena(struct Arena *testArena) {
                 "check the offset now");
 
     // throwaway alloc to fill the current node
-    uint32_t bufferMemory = arena->size - arena->currentOffset;
+    uint32_t bufferMemory =
+        (uint32_t)arena->size - (uint32_t)arena->currentOffset;
     float *y = mallocArena(&arena, bufferMemory);
     ASSERT_TRUE(y != NULL, "check malloc'ed pointer status");
 
@@ -175,7 +182,8 @@ static void testFreeArena(struct Arena *testArena) {
 }
 
 static void testScratchPad(struct Arena *testArena) {
-    uint32_t size = getpagesize() - sizeof(struct Arena);
+    (void)testArena;
+    uint32_t size = (uint32_t)getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
     ASSERT_TRUE(arena->size == size, "check initial size of the arena");
@@ -192,7 +200,8 @@ static void testScratchPad(struct Arena *testArena) {
 
     float *b = mallocArena(&arena, 40 * sizeof(float));
 
-    uint32_t bufferMemory = arena->size - arena->currentOffset;
+    uint32_t bufferMemory =
+        (uint32_t)arena->size - (uint32_t)arena->currentOffset;
     float *x = mallocArena(&arena, bufferMemory);
     ASSERT_TRUE(x != NULL, "check malloc'ed pointer status");
 
@@ -222,8 +231,9 @@ static void testScratchPad(struct Arena *testArena) {
 }
 
 static void testMemoryAlignment(struct Arena *testArena) {
+    (void)testArena;
     // show that memory will be auto aligned
-    uint32_t size = getpagesize() - sizeof(struct Arena);
+    uint32_t size = (uint32_t)getpagesize() - sizeof(struct Arena);
     struct Arena *arena = createArena();
     // sanity check
     ASSERT_TRUE(arena->size == size, "check initial size of the arena");
@@ -250,6 +260,7 @@ static void testMemoryAlignment(struct Arena *testArena) {
 }
 
 static void testArenaFaults(struct Arena *testArena) {
+    (void)testArena;
     DEBUG_PRINT("`testArenaFaults` will trigger many Error prints. As long as "
                 "there is not seg faults this is expected");
     struct Arena *arena_a = createArenaNode(NULL, 0);
@@ -287,7 +298,7 @@ static void testArenaFaults(struct Arena *testArena) {
     burnItDown(&arena_c);
 }
 
-int runArenaTests() {
+int runArenaTests(void) {
     struct Arena *memory = createArena();
     int status = 0;
     status = setUp(memory);

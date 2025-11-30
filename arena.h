@@ -3,7 +3,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <unistd.h>
 
 struct Arena {
     struct Arena *prevNode;
@@ -16,7 +15,7 @@ struct Arena {
 // arena creation
 // Since size is a uint32 the max total arena size is 2^32. If you need more
 // than that then you are crazy
-struct Arena *createArena();
+struct Arena *createArena(void);
 
 // destroy the arena. The arena pointer will be returned as null
 void burnItDown(struct Arena **arena);

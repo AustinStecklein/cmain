@@ -4,6 +4,6 @@
 #include "../string.h"
 #include "unittest.h"
 
-int runStringTests();
+int runStringTests(void);
 
 #endif

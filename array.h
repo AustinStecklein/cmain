@@ -66,7 +66,7 @@ enum ArrayError {
     }
 #define ARRAY_DEFINE(type, name)                                               \
     typedef struct {                                                           \
-        type *items;                                                           \
+        (type) * items;                                                        \
         size_t size;                                                           \
         size_t alloc;                                                          \
         struct Arena *arena;                                                   \
@@ -77,7 +77,7 @@ enum ArrayError {
 // used to set up the array
 #define INIT_ARRAY(array, givenArena, status)                                  \
     do {                                                                       \
-        if (givenArena == NULL) {                                              \
+        if ((givenArena) == NULL) {                                            \
             DEBUG_ERROR("called INIT_ARRAY with either a null array or arena " \
                         "pointer");                                            \
             (status) = NULLPOINTER;                                            \
@@ -123,7 +123,7 @@ enum ArrayError {
         if ((array).alloc == (array).size) {                                   \
             REALLOC_ARRAY(array, nextArrayAllocSize((array).size), status);    \
         }                                                                      \
-        if (status == FAILEDALLOC) {                                           \
+        if ((status) == FAILEDALLOC) {                                         \
             DEBUG_ERROR("cannot add item to array");                           \
             break;                                                             \
         }                                                                      \
@@ -183,14 +183,14 @@ static inline size_t nextArrayAllocSize(size_t currentlyAlloced) {
 
 #define COPY_POINTER(src_pointer, src_size, array_dst, status)                 \
     do {                                                                       \
-        if (!ARRAY_INITIALIZED(array_dst) || src_pointer == NULL) {            \
+        if (!ARRAY_INITIALIZED(array_dst) || (src_pointer) == NULL) {          \
             DEBUG_ERROR("called COPY_POINTER with a null pointer");            \
             (status) = NULLPOINTER;                                            \
             break;                                                             \
         }                                                                      \
-        if ((array_dst).alloc <= src_size) {                                   \
+        if ((array_dst).alloc <= (src_size)) {                                 \
             (array_dst).items = mallocArena(                                   \
-                &(array_dst).arena, src_size * sizeof((array_dst).items));     \
+                &(array_dst).arena, (src_size) * sizeof((array_dst).items));   \
         }                                                                      \
         if ((array_dst).items != NULL) {                                       \
             (array_dst).size = src_size;                                       \
@@ -203,7 +203,7 @@ static inline size_t nextArrayAllocSize(size_t currentlyAlloced) {
     } while (0)
 
 static inline void *reallocArray(struct Arena *arena, void *oldPointer,
-                                 size_t oldAlloc, size_t newAlloc) {
+                                 size_t oldAlloc, size_t newAlloc) { // NOLINT
     if (arena == NULL) {
         DEBUG_ERROR("called reallocArray with a null arena pointer");
         return NULL;
