@@ -8,22 +8,6 @@
       "-ggdb3",
       "-c",
       "-o",
-      "build/./tests/test_buffer.c.o",
-      "tests/test_buffer.c"
-    ],
-    "directory": "/home/austin/code/cmain",
-    "file": "/home/austin/code/cmain/tests/test_buffer.c",
-    "output": "/home/austin/code/cmain/build/tests/test_buffer.c.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-Wall",
-      "-DDEBUG",
-      "-I./tests/",
-      "-ggdb3",
-      "-c",
-      "-o",
       "build/./tests/test_string.c.o",
       "tests/test_string.c"
     ],
@@ -78,6 +62,22 @@
     "directory": "/home/austin/code/cmain",
     "file": "/home/austin/code/cmain/tests/test_arena.c",
     "output": "/home/austin/code/cmain/build/tests/test_arena.c.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-Wall",
+      "-DDEBUG",
+      "-I./tests/",
+      "-ggdb3",
+      "-c",
+      "-o",
+      "build/./tests/test_buffer.c.o",
+      "tests/test_buffer.c"
+    ],
+    "directory": "/home/austin/code/cmain",
+    "file": "/home/austin/code/cmain/tests/test_buffer.c",
+    "output": "/home/austin/code/cmain/build/tests/test_buffer.c.o"
   },
   {
     "arguments": [

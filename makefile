@@ -41,6 +41,11 @@ clean:
 	-rm ./build/*
 	-rm ./build/tests/*
 
+.PHONY: build_reqs
+build_reqs:
+	-rm ./build/*
+	bear -- make
+
 .PHONY: check
 check:
 	clang-tidy  *.c *.h
